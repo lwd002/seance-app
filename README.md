@@ -1,4 +1,7 @@
-# Séance Android App
+# Séance — ACE-Step Android Client
+
+**English**: An Android WebView client for [ACE-Step 1.5](https://github.com/ace-step/ACE-Step-1.5), the open-source music generation model. Connects to your self-hosted ACE-Step API server over LAN. Key feature: all API traffic is routed through a native HTTP bridge, bypassing Android WebView's private-network request blocking that breaks plain web pages talking to LAN AI servers. APKs are built automatically via GitHub Actions — no local Android toolchain needed.
+
 
 ACE-Step 音乐工作台（Séance）的安卓壳应用：一个极简 WebView 容器，内嵌 `ace-step-studio-mobile.html`，直连局域网内的 ACE-Step API。
 
