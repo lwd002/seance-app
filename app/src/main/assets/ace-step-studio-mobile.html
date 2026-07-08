@@ -746,17 +746,80 @@ function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<
 /* ============================================================
    API layer
    ============================================================ */
+/* ============================================================
+   Native HTTP adapter (Android app only).
+   In the app, WebView blocks "secure page -> plain-http LAN" fetches
+   (private-network preflight the server can't answer), so all API traffic
+   detours through the Java bridge. In normal browsers NATIVE is false and
+   everything below is dormant.
+   ============================================================ */
+const NATIVE = !!(window.AndroidBridge && window.AndroidBridge.httpRequest);
+const __nat = {seq: 0, pending: {}};
+window.__nativeHttpDone = function(id, status, b64){
+  const p = __nat.pending[id]; if (!p) return; delete __nat.pending[id];
+  if (!status){ p.reject(new Error('原生请求失败（网络/地址错误）')); return; }
+  try{
+    const bin = atob(b64 || '');
+    const bytes = new Uint8Array(bin.length);
+    for (let i=0;i<bin.length;i++) bytes[i] = bin.charCodeAt(i);
+    p.resolve({status: status, text: new TextDecoder('utf-8').decode(bytes)});
+  }catch(e){ p.reject(e); }
+};
+window.__nativeDlDone = function(id, ok, result){
+  const p = __nat.pending[id]; if (!p) return; delete __nat.pending[id];
+  if (ok) p.resolve(result); else p.reject(new Error(result || '下载失败'));
+};
+function natRequest(method, url, headers, bodyB64){
+  return new Promise(function(resolve, reject){
+    const id = 'n' + (++__nat.seq);
+    __nat.pending[id] = {resolve: resolve, reject: reject};
+    window.AndroidBridge.httpRequest(id, method, url, JSON.stringify(headers || {}), bodyB64 || '');
+  });
+}
+function natDownload(url){
+  return new Promise(function(resolve, reject){
+    const id = 'd' + (++__nat.seq);
+    __nat.pending[id] = {resolve: resolve, reject: reject};
+    window.AndroidBridge.downloadToCache(id, url);
+  });
+}
+function b64FromBuffer(buf){
+  const bytes = new Uint8Array(buf);
+  let bin = '';
+  for (let i=0;i<bytes.length;i+=0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i+0x8000));
+  return btoa(bin);
+}
+
 async function apiRequest(path, {method='GET', json=null, form=null, headers={}}={}){
   const url = Config.apiBase.replace(/\/+$/,'') + path;
-  const opts = {method, headers: Object.assign({}, headers)};
-  if (Config.apiKey) opts.headers['Authorization'] = 'Bearer ' + Config.apiKey;
-  if (json){ opts.headers['Content-Type']='application/json'; opts.body = JSON.stringify(json); }
-  if (form){ opts.body = form; }
-  const res = await fetch(url, opts);
+  let status, bodyText;
+  if (NATIVE){
+    const hdrs = Object.assign({}, headers);
+    if (Config.apiKey) hdrs['Authorization'] = 'Bearer ' + Config.apiKey;
+    let bodyB64 = '';
+    if (json){
+      hdrs['Content-Type'] = 'application/json';
+      bodyB64 = b64FromBuffer(new TextEncoder().encode(JSON.stringify(json)).buffer);
+    } else if (form){
+      /* Response(form) serializes multipart and exposes the boundary header */
+      const r = new Response(form);
+      hdrs['Content-Type'] = r.headers.get('content-type');
+      bodyB64 = b64FromBuffer(await r.arrayBuffer());
+    }
+    const res = await natRequest(method, url, hdrs, bodyB64);
+    status = res.status; bodyText = res.text;
+  } else {
+    const opts = {method, headers: Object.assign({}, headers)};
+    if (Config.apiKey) opts.headers['Authorization'] = 'Bearer ' + Config.apiKey;
+    if (json){ opts.headers['Content-Type']='application/json'; opts.body = JSON.stringify(json); }
+    if (form){ opts.body = form; }
+    const res = await fetch(url, opts);
+    status = res.status; bodyText = await res.text();
+  }
   let body;
-  try { body = await res.json(); } catch(e){ body = null; }
-  if (!res.ok){
-    const msg = (body && (body.error || body.detail)) || ('HTTP ' + res.status);
+  try { body = JSON.parse(bodyText); } catch(e){ body = null; }
+  if (status < 200 || status >= 300){
+    const msg = (body && (body.error || body.detail)) || ('HTTP ' + status);
     throw new Error(msg);
   }
   if (body && typeof body === 'object' && 'code' in body && 'data' in body){
@@ -1849,7 +1912,8 @@ async function fetchAsBlobTrack(job, parsedItem, titleSuffix, seedForThis){
   const title = job.title + (titleSuffix||'');
   const snapshot = job.formSnapshot ? Object.assign({}, job.formSnapshot, {seed: seedForThis}) : null;
   try{
-    const res = await fetch(remoteUrl);
+    const src = NATIVE ? await natDownload(remoteUrl) : remoteUrl;
+    const res = await fetch(src);
     if (!res.ok) throw new Error('HTTP '+res.status);
     const blob = await res.blob();
     const objUrl = URL.createObjectURL(blob);
