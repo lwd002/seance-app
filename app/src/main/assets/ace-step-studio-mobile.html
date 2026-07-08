@@ -1,0 +1,2004 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0e0e0e">
+<title>Séance — ACE-Step Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,450;0,9..144,600;1,9..144,450&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --void:#0e0e0e; --panel:#181818; --panel-raised:#202020; --panel-inset:#0a0a0a;
+  --hairline:#2a2a2a; --hairline-soft:#212121;
+  --amber:#1ed760; --amber-dim:#15833f; --amber-glow:rgba(30,215,96,0.16);
+  --teal:#ffffff; --teal-dim:#727272; --teal-glow:rgba(255,255,255,0.08);
+  --red:#f15e5a; --text:#ffffff; --text-dim:#b3b3b3; --text-faint:#7a7a7a;
+  --radius:14px;
+  --radius-md:10px;
+  --radius-sm:8px;
+  --shadow-panel:0 1px 0 rgba(255,255,255,.04) inset, 0 10px 26px rgba(0,0,0,.26);
+  --font-display:'Fraunces', Georgia, serif;
+  --font-body:'Inter', -apple-system, sans-serif;
+  --font-mono:'JetBrains Mono', ui-monospace, monospace;
+  --nav-h:64px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;}
+body{
+  background:
+    radial-gradient(ellipse 700px 400px at 20% -10%, rgba(30,215,96,0.09), transparent),
+    radial-gradient(ellipse 600px 400px at 100% 0%, rgba(255,255,255,0.035), transparent),
+    radial-gradient(ellipse 700px 500px at 50% 110%, rgba(30,215,96,0.04), transparent),
+    var(--void);
+  color:var(--text); font-family:var(--font-body); font-size:15px; line-height:1.55;
+  min-height:100vh; -webkit-font-smoothing:antialiased;
+  padding-bottom:calc(var(--nav-h) + env(safe-area-inset-bottom));
+}
+::selection{background:var(--amber);color:var(--void);}
+a{color:inherit;}
+button{font-family:inherit;cursor:pointer;}
+:focus-visible{outline:2px solid var(--amber);outline-offset:2px;}
+/* prevent iOS auto-zoom: inputs must be >=16px */
+input,textarea,select{font-size:16px !important;}
+
+/* ---------- Top bar ---------- */
+.topbar{
+  position:sticky;top:0;z-index:60;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:calc(12px + env(safe-area-inset-top)) 16px 12px;
+  background:rgba(20,18,15,0.92);backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--hairline);
+}
+.brand{display:flex;align-items:baseline;gap:9px;}
+.brand-mark{font-family:var(--font-display);font-style:italic;font-weight:450;font-size:22px;color:var(--text);}
+.brand-mark span{color:var(--amber);}
+.brand-sub{font-family:var(--font-mono);font-size:8.5px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-faint);}
+.topbar-right{display:flex;align-items:center;gap:8px;}
+.status-dot{width:8px;height:8px;border-radius:50%;background:var(--text-faint);flex-shrink:0;}
+.status-dot.on{background:var(--teal);box-shadow:0 0 8px var(--teal);}
+.status-dot.off{background:var(--red);}
+.status-dot.pending{background:var(--amber);animation:pulse-dot 1.2s ease-in-out infinite;}
+@keyframes pulse-dot{0%,100%{opacity:1;}50%{opacity:.35;}}
+.icon-btn{width:38px;height:38px;border-radius:50%;border:1px solid var(--hairline);background:var(--panel);color:var(--text-dim);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.icon-btn svg{width:17px;height:17px;}
+
+.shell{padding:16px 16px 24px;}
+
+/* ---------- Pages ---------- */
+.page{display:none;}
+.page.active{display:block;animation:fade-in .2s ease;}
+@keyframes fade-in{from{opacity:0;}to{opacity:1;}}
+.page[data-page-panel="create"]{padding-bottom:96px;}
+
+/* ---------- Bottom nav (reuses .page-tab / .page JS, restyled) ---------- */
+.page-tabs{
+  position:fixed;left:0;right:0;bottom:0;z-index:80;
+  display:flex;background:rgba(28,25,21,0.97);backdrop-filter:blur(14px);
+  border-top:1px solid var(--hairline);
+  padding:6px 6px calc(6px + env(safe-area-inset-bottom));
+  height:var(--nav-h);
+}
+.page-tab{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  border:none;background:transparent;color:var(--text-faint);border-radius:10px;
+  font-size:10.5px;font-weight:600;letter-spacing:.02em;padding:4px;
+}
+.page-tab .tab-icon{font-size:19px;line-height:1;}
+.page-tab.active{color:var(--amber);}
+.page-tab .badge-dot{position:relative;}
+.page-tab .count{font-family:var(--font-mono);font-size:9px;color:var(--text-faint);}
+.page-tab.active .count{color:var(--amber);}
+
+/* ---------- Panel ---------- */
+.panel{background:linear-gradient(180deg,#1b1b1b,#161616);border:1px solid var(--hairline);border-radius:var(--radius);overflow:hidden;margin-bottom:14px;box-shadow:var(--shadow-panel);}
+.panel-head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--hairline-soft);gap:10px;}
+.panel-title{font-family:var(--font-mono);font-size:12.5px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text);display:flex;align-items:center;gap:8px;}
+.panel-title .num{color:var(--amber);}
+.panel-body{padding:16px;}
+
+/* ---------- Mode tabs ---------- */
+.mode-tabs{display:flex;gap:2px;background:var(--panel-inset);border-radius:var(--radius-md);padding:3px;}
+.mode-tab{flex:1;padding:11px 6px;text-align:center;border-radius:var(--radius-sm);border:none;background:transparent;color:var(--text-faint);font-size:12px;font-weight:600;transition:all .15s;min-height:44px;}
+.mode-tab.active{background:var(--panel-raised);color:var(--amber);box-shadow:0 0 0 1px var(--hairline);}
+.mode-panel{display:none;}
+.mode-panel.active{display:block;animation:fade-in .2s ease;}
+
+.subtab-bar{display:flex;gap:2px;background:var(--panel-inset);border-radius:var(--radius-md);padding:3px;margin-bottom:14px;}
+.subtab{flex:1;padding:10px 8px;text-align:center;border-radius:var(--radius-sm);border:none;background:transparent;color:var(--text-faint);font-size:12px;font-weight:600;min-height:40px;}
+.subtab.active{background:var(--panel-raised);color:var(--amber);box-shadow:0 0 0 1px var(--hairline);}
+.tpl-grid{display:flex;flex-direction:column;gap:10px;}
+.tpl-card{border:1px solid var(--hairline);background:var(--panel-inset);border-radius:8px;padding:14px 15px;}
+.tpl-card .tpl-name{font-size:14px;font-weight:600;color:var(--text);}
+.tpl-card .tpl-en{font-family:var(--font-mono);font-size:10px;color:var(--text-faint);margin-top:2px;}
+.tpl-card .tpl-desc{font-size:12px;color:var(--text-dim);margin-top:6px;line-height:1.45;}
+
+/* ---------- Form ---------- */
+.field{margin-bottom:16px;}
+.field:last-child{margin-bottom:0;}
+.field-row{display:grid;gap:12px;}
+.field-row.cols-2{grid-template-columns:1fr 1fr;}
+.field-row.cols-3{grid-template-columns:1fr 1fr 1fr;}
+.field-row.cols-4{grid-template-columns:1fr 1fr;}
+label.field-label{display:flex;align-items:center;justify-content:space-between;font-size:14px;font-weight:600;color:var(--text);margin-bottom:7px;}
+label.field-label .hint{font-weight:400;color:var(--text-faint);font-size:11px;font-family:var(--font-mono);}
+input[type=text],input[type=number],input[type=search],textarea,select{
+  width:100%;background:var(--panel-inset);border:1px solid var(--hairline);border-radius:6px;
+  color:var(--text);padding:12px 13px;font-family:var(--font-body);min-height:46px;
+}
+textarea{resize:vertical;line-height:1.6;}
+input:focus,textarea:focus,select:focus{border-color:var(--amber-dim);box-shadow:0 0 0 3px var(--amber-glow);}
+input::placeholder,textarea::placeholder{color:var(--text-faint);}
+select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23b3b3b3'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:32px;}
+select[multiple]{background-image:none;padding:8px;min-height:190px;}
+select[multiple] optgroup{font-family:var(--font-mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--text-faint);font-style:normal;padding-top:8px;}
+select[multiple] option{font-family:var(--font-body);font-size:14px;color:var(--text-dim);padding:9px 8px;border-radius:4px;}
+select[multiple] option:checked{background:var(--amber-glow) linear-gradient(var(--amber-glow),var(--amber-glow));color:var(--amber);font-weight:600;}
+.mono-input input,.mono-input select{font-family:var(--font-mono);}
+textarea#caption{min-height:64px;}
+textarea#lyrics{min-height:180px;font-size:15px !important;line-height:1.75;}
+textarea#remixLyrics{min-height:150px;}
+
+.lyrics-toolbar{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;}
+.tag-chip{font-family:var(--font-mono);font-size:10.5px;color:var(--text-dim);background:var(--panel-inset);border:1px solid var(--hairline);border-radius:20px;padding:7px 12px;min-height:32px;}
+
+.switch-row{display:flex;align-items:center;justify-content:space-between;padding:13px 0;gap:14px;}
+.switch-row + .switch-row{border-top:1px solid var(--hairline-soft);}
+.switch-label{font-size:13.5px;color:var(--text);}
+.switch-label small{display:block;font-size:11.5px;color:var(--text-faint);margin-top:3px;font-weight:400;line-height:1.5;}
+.switch{position:relative;width:44px;height:26px;flex-shrink:0;}
+.switch input{opacity:0;width:0;height:0;position:absolute;}
+.switch .track{position:absolute;inset:0;background:var(--panel-inset);border:1px solid var(--hairline);border-radius:20px;transition:.2s;}
+.switch .thumb{position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:var(--text-faint);transition:.2s;}
+.switch input:checked + .track{background:var(--amber-glow);border-color:var(--amber-dim);}
+.switch input:checked + .track .thumb{transform:translateX(18px);background:var(--amber);}
+.switch input:disabled + .track{opacity:.4;}
+
+.slider-field .slider-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;}
+.slider-value{font-family:var(--font-mono);color:var(--amber);font-size:13px;}
+input[type=range]{-webkit-appearance:none;width:100%;height:4px;background:var(--hairline);border-radius:2px;outline:none;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:var(--amber);cursor:pointer;border:3px solid var(--void);box-shadow:0 0 0 1px var(--amber-dim);}
+input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:var(--amber);cursor:pointer;border:3px solid var(--void);}
+
+/* ---------- Buttons ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 18px;border-radius:var(--radius-sm);font-size:13.5px;font-weight:600;border:1px solid transparent;min-height:44px;white-space:nowrap;}
+.btn-primary{background:linear-gradient(135deg,#25e56b,#16b850);color:#08210f;box-shadow:0 2px 12px rgba(30,215,96,.25);}
+.btn-primary:active{transform:scale(0.98);}
+.btn-primary:disabled{background:var(--hairline);color:var(--text-faint);}
+.btn-ghost{background:transparent;border-color:var(--hairline);color:var(--text-dim);}
+.btn-teal{background:transparent;border-color:var(--teal-dim);color:var(--teal);}
+.btn-block{width:100%;}
+.btn-sm{padding:8px 13px;font-size:11.5px;min-height:36px;}
+.action-row{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap;}
+.preset-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;}
+.preset-row .btn{flex:1;min-width:140px;}
+
+/* ---------- Accordion ---------- */
+.accordion{border-top:1px solid var(--hairline-soft);margin-top:16px;}
+.accordion-head{display:flex;align-items:center;justify-content:space-between;padding:16px 0;min-height:44px;}
+.accordion-head .label{font-size:14px;font-weight:600;letter-spacing:.03em;text-transform:none;color:var(--text);}
+.accordion-head .chevron{transition:transform .2s;color:var(--text-faint);flex-shrink:0;}
+.accordion.open .chevron{transform:rotate(180deg);}
+.accordion-body{display:none;padding-bottom:4px;}
+.accordion.open .accordion-body{display:block;animation:fade-in .2s ease;}
+.subgroup-title{font-family:var(--font-mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-faint);margin:18px 0 12px;padding-top:16px;border-top:1px solid var(--hairline-soft);}
+.subgroup-title:first-child{margin-top:2px;padding-top:0;border-top:none;}
+.tip-box{background:var(--teal-glow);border:1px solid var(--teal-dim);border-radius:var(--radius-md);padding:13px 14px;font-size:12.5px;color:var(--text-dim);line-height:1.65;margin-top:14px;}
+.tip-box b{color:var(--teal);}
+.lyrics-hint{margin-top:8px;padding:10px 12px;background:var(--amber-glow);border:1px solid var(--amber-dim);border-radius:var(--radius-sm);font-size:12px;color:var(--text-dim);line-height:1.7;}
+
+/* ---------- Tag pickers ---------- */
+.picker-group{margin-bottom:14px;}
+.picker-group:last-child{margin-bottom:0;}
+.picker-group-label{font-family:var(--font-mono);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--text-faint);margin-bottom:8px;}
+.chip-wrap{display:flex;flex-wrap:wrap;gap:7px;}
+.chip{font-size:12px;color:var(--text-dim);background:var(--panel-inset);border:1px solid var(--hairline);border-radius:20px;padding:8px 13px;min-height:36px;display:inline-flex;align-items:center;}
+.chip.selected{background:var(--amber-glow);border-color:var(--amber);color:var(--amber);font-weight:600;}
+.selected-summary{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px;}
+.selected-summary .chip.selected .x{margin-left:6px;opacity:.7;}
+
+/* ---------- Dropzone ---------- */
+.dropzone{border:1.5px dashed var(--hairline);border-radius:8px;padding:22px 16px;text-align:center;background:var(--panel-inset);position:relative;min-height:64px;}
+.dropzone input{position:absolute;inset:0;opacity:0;}
+.dropzone-icon{color:var(--text-faint);margin-bottom:8px;}
+.dropzone-text{font-size:12.5px;color:var(--text-dim);}
+.dropzone-text b{color:var(--amber);font-weight:600;}
+.dropzone-file{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--panel-raised);border:1px solid var(--hairline);border-radius:6px;padding:10px 13px;font-size:12.5px;color:var(--text);margin-top:10px;}
+.dropzone-file button{background:none;border:none;color:var(--text-faint);font-size:18px;line-height:1;padding:4px;}
+
+.task-grid{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch;scroll-snap-type:x proximity;}
+.task-card{flex:0 0 auto;width:158px;scroll-snap-align:start;border:1px solid var(--hairline);background:var(--panel-inset);border-radius:8px;padding:13px 14px;}
+.task-card.selected{border-color:var(--amber);background:var(--amber-glow);}
+.task-card .t-name{font-size:13px;font-weight:600;color:var(--text);}
+.task-card.selected .t-name{color:var(--amber);}
+.task-card .t-desc{font-size:11px;color:var(--text-faint);margin-top:4px;line-height:1.45;}
+
+/* ---------- Sticky generate bar ---------- */
+.sticky-generate{
+  position:fixed;left:0;right:0;bottom:calc(var(--nav-h) + env(safe-area-inset-bottom));z-index:70;
+  background:rgba(20,20,20,0.97);backdrop-filter:blur(14px);border-top:1px solid var(--hairline);
+  padding:12px 16px;display:flex;align-items:center;gap:14px;
+}
+.sticky-generate .btn-primary{font-size:15px;letter-spacing:.04em;border-radius:var(--radius-md);}
+.eq{display:flex;align-items:flex-end;gap:3px;height:24px;width:32px;flex-shrink:0;}
+.eq span{flex:1;background:var(--hairline);border-radius:1px;height:20%;}
+.eq.live span{background:var(--amber);animation:eq-bounce 0.9s ease-in-out infinite;}
+.eq span:nth-child(1){animation-delay:-.6s;} .eq span:nth-child(2){animation-delay:-.3s;}
+.eq span:nth-child(3){animation-delay:-.8s;} .eq span:nth-child(4){animation-delay:-.1s;} .eq span:nth-child(5){animation-delay:-.5s;}
+@keyframes eq-bounce{0%,100%{height:15%;}50%{height:95%;}}
+
+/* ---------- Queue ---------- */
+.queue-empty{padding:60px 20px;text-align:center;color:var(--text-faint);}
+.queue-empty svg{width:32px;height:32px;margin-bottom:12px;opacity:.5;}
+.job-list{display:flex;flex-direction:column;}
+.job{padding:16px;border-bottom:1px solid var(--hairline-soft);}
+.job:last-child{border-bottom:none;}
+.job-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;}
+.job-title{font-size:13.5px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:60vw;}
+.job-badge{font-family:var(--font-mono);font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;padding:4px 9px;border-radius:20px;flex-shrink:0;}
+.job-badge.queued{background:rgba(168,156,135,0.12);color:var(--text-dim);}
+.job-badge.running{background:var(--amber-glow);color:var(--amber);}
+.job-badge.succeeded{background:var(--teal-glow);color:var(--teal);}
+.job-badge.failed{background:rgba(198,91,78,0.14);color:var(--red);}
+.job-meta{font-family:var(--font-mono);font-size:10.5px;color:var(--text-faint);margin-bottom:10px;}
+.job-progress{height:3px;background:var(--hairline);border-radius:2px;overflow:hidden;}
+.job-progress .bar{height:100%;background:var(--amber);}
+.job-progress.indeterminate .bar{width:35%;animation:indet 1.4s ease-in-out infinite;}
+@keyframes indet{0%{transform:translateX(-100%);}100%{transform:translateX(280%);}}
+.tracks{display:flex;flex-direction:column;gap:10px;}
+.track{background:var(--panel-inset);border:1px solid var(--hairline);border-radius:8px;padding:12px;}
+.track-row{display:flex;align-items:center;gap:11px;}
+.play-btn{width:38px;height:38px;border-radius:50%;background:var(--amber);border:none;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#08210f;}
+.play-btn svg{width:14px;height:14px;}
+.track-scrub{flex:1;height:5px;background:var(--hairline);border-radius:3px;position:relative;}
+.track-scrub .fill{position:absolute;left:0;top:0;height:100%;background:var(--teal);border-radius:3px;width:0%;}
+.track-time{font-family:var(--font-mono);font-size:10px;color:var(--text-faint);flex-shrink:0;min-width:70px;text-align:right;}
+.track-actions{display:flex;gap:8px;margin-top:10px;align-items:center;flex-wrap:wrap;}
+.track-actions button{font-family:var(--font-mono);font-size:11px;color:var(--text-dim);background:none;border:1px solid var(--hairline);border-radius:20px;padding:7px 13px;min-height:34px;}
+.track-actions .danger{color:var(--red);border-color:var(--red);}
+.job-error{font-size:12px;color:var(--red);background:rgba(198,91,78,.08);border-radius:6px;padding:10px 12px;}
+.cache-note{font-size:10.5px;color:var(--text-faint);margin-top:8px;}
+.stats-strip{display:flex;justify-content:space-between;padding:14px 16px;font-family:var(--font-mono);font-size:11px;color:var(--text-faint);border-top:1px solid var(--hairline-soft);}
+.stats-strip b{color:var(--text-dim);}
+
+/* ---------- Library ---------- */
+.library-toolbar{margin-bottom:16px;}
+.storage-meter{display:flex;flex-direction:column;gap:8px;font-family:var(--font-mono);font-size:11px;color:var(--text-dim);margin-bottom:12px;line-height:1.6;}
+.storage-bar{width:100%;height:6px;background:var(--panel-inset);border-radius:3px;overflow:hidden;border:1px solid var(--hairline);}
+.storage-bar .fill{height:100%;background:linear-gradient(90deg,var(--teal),var(--amber));}
+.library-grid{display:flex;flex-direction:column;gap:12px;}
+.lib-card{background:var(--panel);border:1px solid var(--hairline);border-radius:10px;padding:16px;}
+.lib-card-top{display:flex;justify-content:space-between;gap:10px;margin-bottom:4px;}
+.lib-title{font-family:var(--font-display);font-size:17px;color:var(--text);line-height:1.3;}
+.lib-date{font-family:var(--font-mono);font-size:9.5px;color:var(--text-faint);white-space:nowrap;}
+.lib-meta{font-family:var(--font-mono);font-size:10.5px;color:var(--text-faint);margin:6px 0 12px;}
+.library-empty{padding:80px 20px;text-align:center;color:var(--text-faint);}
+.library-empty svg{width:36px;height:36px;margin-bottom:16px;opacity:.5;}
+
+/* ---------- Model ---------- */
+.model-list{display:flex;flex-direction:column;gap:6px;margin-bottom:16px;}
+.model-item{display:flex;align-items:center;gap:10px;background:var(--panel-inset);border:1px solid var(--hairline);border-radius:6px;padding:11px 13px;font-family:var(--font-mono);font-size:12px;}
+.model-item .name{color:var(--text);flex:1;word-break:break-all;}
+.model-item .badge{font-size:9.5px;padding:3px 9px;border-radius:20px;background:var(--amber-glow);color:var(--amber);}
+
+/* toast */
+.toast-stack{position:fixed;left:16px;right:16px;bottom:calc(var(--nav-h) + 82px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:8px;z-index:200;}
+.toast{background:var(--panel-raised);border:1px solid var(--hairline);border-left:3px solid var(--amber);border-radius:6px;padding:12px 16px;font-size:12.5px;color:var(--text);box-shadow:0 8px 24px rgba(0,0,0,.4);animation:toast-in .25s ease;}
+.toast.error{border-left-color:var(--red);}
+.toast.success{border-left-color:var(--teal);}
+@keyframes toast-in{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+
+/* modal */
+.modal-backdrop{position:fixed;inset:0;background:rgba(10,9,7,.75);display:none;align-items:flex-end;justify-content:center;z-index:300;}
+.modal-backdrop.open{display:flex;}
+.modal{background:var(--panel);border:1px solid var(--hairline);border-radius:16px 16px 0 0;width:100%;max-width:520px;max-height:88vh;overflow-y:auto;box-shadow:0 -20px 50px rgba(0,0,0,.5);}
+.modal-head{display:flex;justify-content:space-between;align-items:center;padding:18px 18px;border-bottom:1px solid var(--hairline-soft);position:sticky;top:0;background:var(--panel);}
+.modal-head h3{font-family:var(--font-display);font-weight:450;font-size:19px;}
+.modal-body{padding:18px;padding-bottom:calc(18px + env(safe-area-inset-bottom));}
+.modal-close{background:none;border:none;color:var(--text-faint);font-size:24px;line-height:1;padding:6px;}
+.modal-foot{padding:16px 18px calc(16px + env(safe-area-inset-bottom));border-top:1px solid var(--hairline-soft);display:flex;gap:10px;}
+.modal-foot .btn{flex:1;}
+.help-text{font-size:11.5px;color:var(--text-faint);margin-top:6px;line-height:1.55;}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="brand-mark">Séance<span>.</span></div>
+    <div class="brand-sub">ACE-Step</div>
+  </div>
+  <div class="topbar-right">
+    <div class="status-dot off" id="statusDot" title="连接状态"></div>
+    <span id="statusText" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);"></span>
+    <button class="icon-btn" id="openSettings" aria-label="设置">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 004.6 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.6a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+    </button>
+  </div>
+</header>
+
+<div class="shell">
+
+  <!-- ================= PAGE: CREATE ================= -->
+  <div class="page active" data-page-panel="create">
+
+    <div class="panel">
+      <div class="panel-head"><div class="panel-title"><span class="num">01</span> 创作方式</div></div>
+      <div class="panel-body">
+        <div class="mode-tabs">
+          <button class="mode-tab active" data-mode="write">✎ 写词</button>
+          <button class="mode-tab" data-mode="describe">✨ 描述</button>
+          <button class="mode-tab" data-mode="remix">🎧 翻唱</button>
+          <button class="mode-tab" data-mode="templates">🗂️ 模板</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ---- Write ---- -->
+    <div class="panel mode-panel active" data-mode-panel="write">
+      <div class="panel-head">
+        <div class="panel-title"><span class="num">02</span> 描述与歌词</div>
+        <button class="btn btn-ghost btn-sm" id="randomSampleBtn">🎲 灵感</button>
+      </div>
+      <div class="panel-body">
+        <div class="field">
+          <label class="field-label">风格描述</label>
+          <textarea id="caption" placeholder="例如：忧郁的独立流行, 女声, 吉他与合成器, 120 BPM"></textarea>
+        </div>
+        <div class="field">
+          <label class="field-label">歌词</label>
+          <div class="lyrics-toolbar">
+            <button class="tag-chip" data-insert="[Verse]\n" data-target="lyrics">+ Verse</button>
+            <button class="tag-chip" data-insert="[Chorus]\n" data-target="lyrics">+ Chorus</button>
+            <button class="tag-chip" data-insert="[Bridge]\n" data-target="lyrics">+ Bridge</button>
+            <button class="tag-chip" data-insert="[Outro]\n" data-target="lyrics">+ Outro</button>
+          </div>
+          <textarea id="lyrics" placeholder="[Verse 1]&#10;在这里写下第一句歌词..."></textarea>
+          <div class="lyrics-hint" id="lyricsHint" style="display:none;"></div>
+        </div>
+
+        <div class="field">
+          <label class="field-label">快速预设</label>
+          <div class="preset-row">
+            <button class="btn btn-teal btn-sm" id="presetGuitarSing">🎸 吉他弹唱</button>
+            <button class="btn btn-teal btn-sm" id="presetGuitarSolo">🎸 纯吉他独奏</button>
+          </div>
+          <div class="preset-row"><button class="btn btn-ghost btn-sm btn-block" id="presetClear">清除风格 / 乐器选择</button></div>
+        </div>
+
+        <div class="field">
+          <label class="field-label">歌曲风格 <span class="hint">点开选择，可多选</span></label>
+          <select id="styleSelect" multiple size="6"></select>
+        </div>
+        <div class="selected-summary" id="styleSummary"></div>
+
+        <div class="field">
+          <label class="field-label">伴奏乐器 <span class="hint">点开选择，可多选</span></label>
+          <select id="instrumentSelect" multiple size="6"></select>
+        </div>
+        <div class="selected-summary" id="instrumentSummary"></div>
+        <div class="lyrics-hint" id="instrumentHint" style="display:none;">♪ 当前开着「AI 改写风格描述」（高级参数），改写时可能忽略选中的乐器。乐器必须出现时建议关闭该开关，或在风格描述里写明乐器的角色。</div>
+
+        <div class="switch-row" style="margin-top:8px;">
+          <div class="switch-label">AI 润色歌词与描述<small>可能改动你的歌词原文</small></div>
+          <label class="switch"><input type="checkbox" id="useFormat"><span class="track"><span class="thumb"></span></span></label>
+        </div>
+        <div class="switch-row">
+          <div class="switch-label">同时生成两个版本<small>严格版（不改歌词）+ 润色版</small></div>
+          <label class="switch"><input type="checkbox" id="dualVersion"><span class="track"><span class="thumb"></span></span></label>
+        </div>
+      </div>
+    </div>
+
+    <!-- ---- Describe ---- -->
+    <div class="panel mode-panel" data-mode-panel="describe">
+      <div class="panel-head"><div class="panel-title"><span class="num">02</span> 一句话描述</div></div>
+      <div class="panel-body">
+        <div class="field">
+          <label class="field-label">描述</label>
+          <textarea id="sampleQuery" placeholder="例如：一首安静的孟加拉语情歌，适合深夜聆听" style="min-height:100px;"></textarea>
+        </div>
+        <p class="help-text">AI 会自动生成完整的风格、歌词与曲目信息。</p>
+      </div>
+    </div>
+
+    <!-- ---- Remix ---- -->
+    <div class="panel mode-panel" data-mode-panel="remix">
+      <div class="panel-head"><div class="panel-title"><span class="num">02</span> 参考音频与任务</div></div>
+      <div class="panel-body">
+        <div class="field">
+          <label class="field-label">任务类型 <span class="hint">左右滑动查看更多</span></label>
+          <div class="task-grid" id="taskTypeGrid">
+            <div class="task-card selected" data-task="cover"><div class="t-name">翻唱重编</div><div class="t-desc">新风格重新演绎整首歌</div></div>
+            <div class="task-card" data-task="repaint"><div class="t-name">局部重绘</div><div class="t-desc">只重绘某一段时间区间</div></div>
+            <div class="task-card" data-task="extract"><div class="t-name">元素提取</div><div class="t-desc">从参考音频提取某个元素</div></div>
+            <div class="task-card" data-task="complete"><div class="t-name">续写完成</div><div class="t-desc">基于未完成片段继续创作</div></div>
+            <div class="task-card" data-task="lego"><div class="t-name">片段重组</div><div class="t-desc">重新组合段落结构</div></div>
+            <div class="task-card" data-task="text2music"><div class="t-name">仅风格参考</div><div class="t-desc">从零生成但参考音色</div></div>
+          </div>
+        </div>
+        <div class="field">
+          <label class="field-label">源音频 <span class="hint">src_audio</span></label>
+          <div class="dropzone" id="srcDropzone">
+            <input type="file" id="srcAudioInput" accept="audio/*">
+            <div class="dropzone-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></div>
+            <div class="dropzone-text">点击选择要翻唱的歌曲</div>
+          </div>
+          <div id="srcAudioFile"></div>
+        </div>
+
+        <div class="switch-row">
+          <div class="switch-label">用我自己的歌词翻唱<small>开启后新歌词会替换原曲歌词；关闭则由 AI 参考源音频处理</small></div>
+          <label class="switch"><input type="checkbox" id="remixUseCustomLyrics"><span class="track"><span class="thumb"></span></span></label>
+        </div>
+        <div class="field" id="remixLyricsField" style="display:none;">
+          <label class="field-label">新歌词</label>
+          <div class="lyrics-toolbar">
+            <button class="tag-chip" data-insert="[Verse]\n" data-target="remixLyrics">+ Verse</button>
+            <button class="tag-chip" data-insert="[Chorus]\n" data-target="remixLyrics">+ Chorus</button>
+            <button class="tag-chip" data-insert="[Bridge]\n" data-target="remixLyrics">+ Bridge</button>
+          </div>
+          <textarea id="remixLyrics" placeholder="[Verse 1]&#10;写下想替换成的新歌词..."></textarea>
+          <div class="lyrics-hint" id="remixLyricsHint" style="display:none;"></div>
+        </div>
+
+        <div class="field">
+          <label class="field-label">风格参考音频 <span class="hint">可选，音色迁移</span></label>
+          <div class="dropzone" id="refDropzone">
+            <input type="file" id="refAudioInput" accept="audio/*">
+            <div class="dropzone-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3v10.55A4 4 0 1014 17V7h4V3h-6z"/></svg></div>
+            <div class="dropzone-text">点击选择参考音色的音频</div>
+          </div>
+          <div id="refAudioFile"></div>
+        </div>
+        <div class="field slider-field" id="coverStrengthField">
+          <div class="slider-head"><label class="field-label" style="margin:0;">重编强度</label><span class="slider-value" id="coverStrengthVal">1.0</span></div>
+          <input type="range" id="coverStrength" min="0" max="1" step="0.05" value="1">
+        </div>
+        <div class="field-row cols-2" id="repaintRange" style="display:none;">
+          <div class="field"><label class="field-label">起点（秒）</label><input type="number" id="repaintStart" value="0" min="0" step="1"></div>
+          <div class="field"><label class="field-label">终点（秒）</label><input type="number" id="repaintEnd" value="-1" step="1"></div>
+        </div>
+        <div class="field">
+          <label class="field-label">编辑指令 <span class="hint">可留空</span></label>
+          <textarea id="instruction" placeholder="例如：改成柔和的木吉他 acoustic 版本" style="min-height:56px;"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- ---- Templates ---- -->
+    <div class="panel mode-panel" data-mode-panel="templates">
+      <div class="panel-head"><div class="panel-title"><span class="num">02</span> 选一个成熟模板</div></div>
+      <div class="panel-body">
+        <div class="subtab-bar">
+          <button class="subtab active" data-tplsub="style">按风格（14）</button>
+          <button class="subtab" data-tplsub="scenario">按场景（12）</button>
+        </div>
+
+        <div id="tplStyleView">
+          <div class="tpl-grid" id="tplStyleGrid"></div>
+        </div>
+
+        <div id="tplScenarioView" style="display:none;">
+          <div class="field">
+            <label class="field-label">歌词 <span class="hint">应用场景模板时按这个来</span></label>
+            <div class="subtab-bar">
+              <button class="subtab active" data-lyricchoice="instrumental">纯音乐</button>
+              <button class="subtab" data-lyricchoice="ai">AI 写</button>
+              <button class="subtab" data-lyricchoice="manual">自己写</button>
+            </div>
+          </div>
+          <div class="tpl-grid" id="tplScenarioGrid"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ---- Params ---- -->
+    <div class="panel">
+      <div class="panel-head"><div class="panel-title"><span class="num">03</span> 曲目参数</div></div>
+      <div class="panel-body">
+        <div class="field">
+          <label class="field-label">歌曲名称 <span class="hint">留空则自动生成</span></label>
+          <input type="text" id="songTitle" placeholder="给这首歌起个名字（可选）">
+        </div>
+        <div class="field-row cols-2 mono-input">
+          <div class="field"><label class="field-label">时长（秒）</label><input type="number" id="duration" placeholder="自动" min="10" max="600"></div>
+          <div class="field"><label class="field-label">BPM</label><input type="number" id="bpm" placeholder="自动" min="30" max="300"></div>
+        </div>
+        <div class="field-row cols-2 mono-input">
+          <div class="field"><label class="field-label">调式</label><input type="text" id="keyScale" placeholder="如 C Major"></div>
+          <div class="field"><label class="field-label">拍号</label>
+            <select id="timeSignature"><option value="">自动</option><option value="4">4/4</option><option value="3">3/4</option><option value="2">2/4</option><option value="6">6/8</option></select>
+          </div>
+        </div>
+        <div class="field-row cols-2">
+          <div class="field">
+            <label class="field-label">演唱语言</label>
+            <select id="vocalLanguage">
+              <option value="">AI 自动判断</option><option value="zh">中文</option><option value="en">English</option><option value="ja">日本語</option>
+              <option value="ko">한국어</option><option value="es">Español</option><option value="fr">Français</option>
+              <option value="de">Deutsch</option><option value="pt">Português</option><option value="ru">Русский</option><option value="it">Italiano</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field-label">演唱人声</label>
+            <select id="vocalPersona">
+              <option value="">自动</option>
+              <option value="female vocal">女声</option>
+              <option value="male vocal">男声</option>
+              <option value="male and female duet vocals, alternating male and female singers">男女对唱</option>
+              <option value="group choir vocals">合唱</option>
+            </select>
+          </div>
+        </div>
+        <p class="help-text" id="personaHint" style="display:none;margin:-6px 0 14px;">对唱建议在歌词结构标签里注明谁唱哪段，如 <b>[Verse - male]</b>、<b>[Chorus - female]</b>、<b>[Chorus - duet]</b>，效果会稳定很多。</p>
+        <div class="field"><label class="field-label">生成模型</label><select id="modelSelect"><option value="">默认模型</option></select></div>
+
+        <div class="switch-row">
+          <div class="switch-label">AI 深度规划（5Hz LM）<small>结构更连贯，耗时略增加</small></div>
+          <label class="switch"><input type="checkbox" id="thinking" checked><span class="track"><span class="thumb"></span></span></label>
+        </div>
+
+        <div class="accordion" id="advancedAccordion">
+          <div class="accordion-head"><span class="label">高级参数 · 音质与力度</span><svg class="chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></div>
+          <div class="accordion-body">
+            <button class="btn btn-teal btn-sm btn-block" id="qualityPresetBtn" type="button" style="margin-bottom:6px;">⚡ 应用「更饱满的力度」预设</button>
+            <div class="tip-box"><b>关于响度：</b>输出峰值统一压缩到 -1dB，写死在服务端改不了。真正能提升力度的是：<b>base/xl 模型</b>通常比 <b>turbo</b> 动态范围更好，适当调高推理步数与 guidance scale，开启 ADG，或多生成几首挑一首。</div>
+
+            <div class="subgroup-title">采样批次</div>
+            <div class="field-row cols-2 mono-input">
+              <div class="field"><label class="field-label">生成数量</label><input type="number" id="batchSize" value="1" min="1" max="8"></div>
+              <div class="field"><label class="field-label">推理步数</label><input type="number" id="inferenceSteps" value="8" min="1" max="200"></div>
+            </div>
+            <div class="field"><label class="field-label">输出格式</label>
+              <select id="audioFormat"><option value="mp3">MP3</option><option value="wav">WAV</option><option value="flac">FLAC</option><option value="opus">OPUS</option><option value="aac">AAC</option></select>
+            </div>
+            <div class="switch-row">
+              <div class="switch-label">随机种子</div>
+              <label class="switch"><input type="checkbox" id="useRandomSeed" checked><span class="track"><span class="thumb"></span></span></label>
+            </div>
+            <div class="field" id="seedField" style="display:none;"><label class="field-label">种子</label><input type="number" id="seed" value="-1" class="mono-input"></div>
+
+            <div class="subgroup-title">扩散参数</div>
+            <p class="help-text" style="margin:0 0 12px;">注意：turbo 蒸馏模型（当前服务器上仅有的两个模型）会<b>忽略</b> Guidance Scale / CFG 区间 / ADG，这些仅对 base / sft 模型生效。</p>
+            <div class="field-row cols-2 mono-input">
+              <div class="field"><label class="field-label">Guidance Scale</label><input type="number" id="guidanceScale" value="7.0" step="0.1"></div>
+              <div class="field"><label class="field-label">Shift</label><input type="number" id="shift" value="3.0" step="0.1" min="1" max="5"></div>
+            </div>
+            <div class="field"><label class="field-label">推理方式</label><select id="inferMethod"><option value="ode">ODE（更快）</option><option value="sde">SDE（更多变化）</option></select></div>
+            <div class="field-row cols-2 mono-input">
+              <div class="field"><label class="field-label">CFG 起始</label><input type="number" id="cfgStart" value="0.0" step="0.05" min="0" max="1"></div>
+              <div class="field"><label class="field-label">CFG 结束</label><input type="number" id="cfgEnd" value="1.0" step="0.05" min="0" max="1"></div>
+            </div>
+            <div class="switch-row">
+              <div class="switch-label">Adaptive Dual Guidance<small>仅 base/xl 模型有效</small></div>
+              <label class="switch"><input type="checkbox" id="useAdg"><span class="track"><span class="thumb"></span></span></label>
+            </div>
+
+            <div class="subgroup-title">语言模型（5Hz LM）</div>
+            <div class="field-row cols-2 mono-input">
+              <div class="field"><label class="field-label">Temperature</label><input type="number" id="lmTemperature" value="0.85" step="0.05"></div>
+              <div class="field"><label class="field-label">CFG Scale</label><input type="number" id="lmCfgScale" value="2.5" step="0.1"></div>
+            </div>
+            <div class="field"><label class="field-label">Top-p</label><input type="number" id="lmTopP" value="0.9" step="0.05" class="mono-input"></div>
+            <div class="switch-row">
+              <div class="switch-label">AI 改写风格描述</div>
+              <label class="switch"><input type="checkbox" id="cotCaption" checked><span class="track"><span class="thumb"></span></span></label>
+            </div>
+            <div class="switch-row">
+              <div class="switch-label">AI 自动判断语言</div>
+              <label class="switch"><input type="checkbox" id="cotLanguage" checked><span class="track"><span class="thumb"></span></span></label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+  <!-- sticky generate bar (only visible while create page is active, since it's this page's child) -->
+  <div class="sticky-generate">
+    <div class="eq" id="genEq"><span></span><span></span><span></span><span></span><span></span></div>
+    <button class="btn btn-primary btn-block" id="generateBtn">生成音乐</button>
+  </div>
+  <!-- ================= /PAGE: CREATE ================= -->
+
+  <!-- ================= PAGE: QUEUE ================= -->
+  <div class="page" data-page-panel="queue">
+    <div class="panel">
+      <div class="panel-head">
+        <div class="panel-title"><span class="num">◆</span> 生成队列</div>
+        <button class="btn btn-ghost btn-sm" id="clearFinished">清空已完成</button>
+      </div>
+      <div id="queueBody">
+        <div class="queue-empty" id="queueEmpty">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+          <p>还没有生成任务<br>去「创作」页填写内容后生成</p>
+        </div>
+        <div class="job-list" id="jobList"></div>
+      </div>
+      <div class="stats-strip" id="statsStrip">
+        <span>队列 <b id="statQueue">–</b></span>
+        <span>运行中 <b id="statRunning">–</b></span>
+        <span>均耗时 <b id="statAvg">–</b></span>
+        <span>LM <b id="statLm">–</b></span>
+      </div>
+    </div>
+  </div>
+  <!-- ================= /PAGE: QUEUE ================= -->
+
+  <!-- ================= PAGE: LIBRARY ================= -->
+  <div class="page" data-page-panel="library">
+    <div class="library-toolbar">
+      <div class="storage-meter">
+        <span>本地曲库缓存于浏览器，最近 <span id="libraryCapLabel">50</span> 首，与服务器文件无关</span>
+        <div class="storage-bar"><div class="fill" id="storageFill" style="width:0%"></div></div>
+        <span id="storageLabel">0 / 50</span>
+      </div>
+      <button class="btn btn-ghost btn-sm btn-block" id="clearLibraryBtn">清空曲库</button>
+    </div>
+    <div id="libraryGridWrap">
+      <div class="library-empty" id="libraryEmpty">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+        <p>曲库是空的，生成的歌曲会自动保存在这里</p>
+      </div>
+      <div class="library-grid" id="libraryGrid"></div>
+    </div>
+  </div>
+  <!-- ================= /PAGE: LIBRARY ================= -->
+
+</div>
+
+<!-- ===== Bottom nav (reuses .page-tab / .page switching JS) ===== -->
+<nav class="page-tabs">
+  <button class="page-tab active" data-page="create"><span class="tab-icon">✎</span><span>创作</span></button>
+  <button class="page-tab" data-page="queue"><span class="tab-icon">◆</span><span>队列</span></button>
+  <button class="page-tab" data-page="library"><span class="tab-icon">♪</span><span>曲库 <span class="count" id="libCountBadge"></span></span></button>
+</nav>
+
+<!-- ===== Settings Modal ===== -->
+<div class="modal-backdrop" id="settingsModal">
+  <div class="modal">
+    <div class="modal-head"><h3>服务器设置</h3><button class="modal-close" id="closeSettings">&times;</button></div>
+    <div class="modal-body">
+      <div class="field">
+        <label class="field-label">API 地址</label>
+        <input type="text" id="apiBase" placeholder="http://192.168.10.x:8001">
+        <p class="help-text">手机要连你局域网里跑 ACE-Step 的那台电脑，填它的局域网 IP，不能填 127.0.0.1（那是手机自己）。</p>
+      </div>
+      <div class="field">
+        <label class="field-label">API Key <span class="hint">可选</span></label>
+        <input type="text" id="apiKey" placeholder="仅当服务端设置了 ACESTEP_API_KEY 时需要">
+      </div>
+      <div class="field">
+        <label class="field-label">语言模型（5Hz LM）</label>
+        <select id="lmModelSelect">
+          <option value="acestep-5Hz-lm-4B">acestep-5Hz-lm-4B（默认，作曲能力最强）</option>
+          <option value="acestep-5Hz-lm-1.7B">acestep-5Hz-lm-1.7B（更快，备用）</option>
+          <option value="none">不加载 LM</option>
+        </select>
+        <p class="help-text">LM 负责音乐结构规划和歌词/描述润色，<b>对人声咬字（尤其中文发音）影响很大</b>。连接时自动按这里的选择加载；4B 加载失败会自动回退 1.7B。</p>
+      </div>
+      <div class="switch-row">
+        <div class="switch-label">播放响度增强<small>播放时提升约 6dB 并限幅，补偿服务端偏低的响度；不改变下载的原始文件。改动后对新出现的播放器生效</small></div>
+        <label class="switch"><input type="checkbox" id="loudBoostToggle" checked><span class="track"><span class="thumb"></span></span></label>
+      </div>
+      <div class="field">
+        <label class="field-label">曲库上限</label>
+        <input type="number" id="libraryCap" value="50" min="5" max="500">
+      </div>
+      <p class="help-text">若测试连接失败，通常是服务端没开跨域（CORS），或者手机和电脑不在同一个局域网。</p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" id="testConnection">测试连接</button>
+      <button class="btn btn-primary" id="saveSettings">保存</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-stack" id="toastStack"></div>
+
+<script>
+(function(){
+"use strict";
+
+/* nullish-coalescing replacement: works on much older browsers/webviews
+   that choke on the modern double-question-mark syntax (a plain syntax
+   error there kills the entire script, breaking every button on the page). */
+function nz(v, fallback){ return (v===null || v===undefined) ? fallback : v; }
+
+
+/* ============================================================
+   Config & persistence
+   ============================================================ */
+const Config = {
+  apiBase: localStorage.getItem('acestep.apiBase') || 'http://127.0.0.1:8001',
+  apiKey: localStorage.getItem('acestep.apiKey') || '',
+  libraryCap: parseInt(localStorage.getItem('acestep.libraryCap')||'50', 10),
+  /* key renamed lmModel->lmModel2 on purpose: default switched to 4B (user request),
+     and the old key holds a stale 1.7B that would silently override the new default */
+  lmModel: localStorage.getItem('acestep.lmModel2') || 'acestep-5Hz-lm-4B',
+  loudBoost: localStorage.getItem('acestep.loudBoost') !== '0',
+};
+function saveConfig(){
+  localStorage.setItem('acestep.apiBase', Config.apiBase);
+  localStorage.setItem('acestep.apiKey', Config.apiKey);
+  localStorage.setItem('acestep.libraryCap', String(Config.libraryCap));
+  localStorage.setItem('acestep.lmModel2', Config.lmModel);
+  localStorage.setItem('acestep.loudBoost', Config.loudBoost ? '1' : '0');
+}
+
+/* ============================================================
+   Toasts
+   ============================================================ */
+function toast(msg, type){
+  const stack = document.getElementById('toastStack');
+  const el = document.createElement('div');
+  el.className = 'toast' + (type ? ' ' + type : '');
+  el.textContent = msg;
+  stack.appendChild(el);
+  setTimeout(()=>{ el.style.opacity='0'; el.style.transform='translateX(20px)'; el.style.transition='.25s'; setTimeout(()=>el.remove(),250); }, 4200);
+}
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+/* ============================================================
+   API layer
+   ============================================================ */
+async function apiRequest(path, {method='GET', json=null, form=null, headers={}}={}){
+  const url = Config.apiBase.replace(/\/+$/,'') + path;
+  const opts = {method, headers: Object.assign({}, headers)};
+  if (Config.apiKey) opts.headers['Authorization'] = 'Bearer ' + Config.apiKey;
+  if (json){ opts.headers['Content-Type']='application/json'; opts.body = JSON.stringify(json); }
+  if (form){ opts.body = form; }
+  const res = await fetch(url, opts);
+  let body;
+  try { body = await res.json(); } catch(e){ body = null; }
+  if (!res.ok){
+    const msg = (body && (body.error || body.detail)) || ('HTTP ' + res.status);
+    throw new Error(msg);
+  }
+  if (body && typeof body === 'object' && 'code' in body && 'data' in body){
+    if (body.code !== 200) throw new Error(body.error || '请求失败');
+    return body.data;
+  }
+  return body;
+}
+async function releaseTask(payload, files){
+  if (files && (files.src || files.ref)){
+    const fd = new FormData();
+    Object.entries(payload).forEach(([k,v])=>{
+      if (v===null || v===undefined || v==='') return;
+      fd.append(k, typeof v === 'object' ? JSON.stringify(v) : String(v));
+    });
+    if (files.src) fd.append('src_audio', files.src);
+    if (files.ref) fd.append('reference_audio', files.ref);
+    return apiRequest('/release_task', {method:'POST', form: fd});
+  }
+  return apiRequest('/release_task', {method:'POST', json: payload});
+}
+const queryResult = (ids) => apiRequest('/query_result', {method:'POST', json:{task_id_list: ids}});
+const createRandomSample = (sample_type) => apiRequest('/create_random_sample', {method:'POST', json:{sample_type}});
+const modelInventory = () => apiRequest('/v1/model_inventory', {method:'GET'});
+const getStats = () => apiRequest('/v1/stats', {method:'GET'});
+const pingHealth = () => apiRequest('/health', {method:'GET'});
+const initModels = (body) => apiRequest('/v1/init', {method:'POST', json: body});
+
+function audioUrl(fileField){
+  if (!fileField) return null;
+  if (/^https?:\/\//i.test(fileField)) return fileField;
+  return Config.apiBase.replace(/\/+$/,'') + fileField;
+}
+
+/* ============================================================
+   Connection status
+   ============================================================ */
+let connected = false;
+async function refreshStatus(){
+  const dot = document.getElementById('statusDot');
+  const txt = document.getElementById('statusText');
+  dot.className = 'status-dot pending';
+  txt.textContent = '连接中…';
+  try{
+    const health = await pingHealth();
+    connected = true;
+    dot.className = 'status-dot on';
+    txt.textContent = Config.apiBase.replace(/^https?:\/\//,'');
+    updateLmStat(health);
+    loadModels();
+    refreshStats();
+    ensureInitialized(health);
+  }catch(e){
+    connected = false;
+    dot.className = 'status-dot off';
+    txt.textContent = '未连接';
+  }
+}
+
+/* Server lazy-loads nothing on its own: with models_initialized=false every
+   /release_task fails silently (stage "failed"), and with llm_initialized=false
+   thinking/use_format/CoT are inert — the main reason vocals used to come out
+   worse than expected. So we auto-init on connect. */
+let initInProgress = false;
+async function ensureInitialized(health){
+  if (initInProgress || !health) return;
+  const wantLm = Config.lmModel !== 'none';
+  const needDit = !health.models_initialized;
+  const needLm = wantLm && (!health.llm_initialized || (health.loaded_lm_model && health.loaded_lm_model !== Config.lmModel));
+  if (!needDit && !needLm) return;
+  initInProgress = true;
+  const dot = document.getElementById('statusDot');
+  const txt = document.getElementById('statusText');
+  dot.className = 'status-dot pending';
+  txt.textContent = '正在加载模型…';
+  toast('服务器模型尚未就绪，正在自动加载' + (wantLm ? '（含 LM，约 30–90 秒）' : '（约 30 秒）') + '…');
+  try{
+    const body = {init_llm: wantLm};
+    if (wantLm) body.lm_model_path = Config.lmModel;
+    const modelSel = document.getElementById('modelSelect');
+    if (modelSel.value) body.model = modelSel.value;
+    await initModels(body);
+    toast('模型加载完成 ✓（LM: ' + (wantLm ? Config.lmModel.replace('acestep-5Hz-lm-','') : '未启用') + '）','success');
+  }catch(e){
+    /* graceful degrade: if the preferred LM (e.g. 4B) fails to load, fall back to 1.7B
+       instead of leaving the LM off — LM-off silently ruins vocal articulation */
+    if (wantLm && Config.lmModel !== 'acestep-5Hz-lm-1.7B'){
+      toast('加载 ' + Config.lmModel.replace('acestep-5Hz-lm-','') + ' 失败，自动回退到 1.7B…','error');
+      try{
+        await initModels({init_llm: true, lm_model_path: 'acestep-5Hz-lm-1.7B'});
+        Config.lmModel = 'acestep-5Hz-lm-1.7B';
+        saveConfig();
+        toast('已回退并加载 1.7B ✓','success');
+      }catch(e2){
+        toast('模型自动加载失败: ' + e2.message + '（可稍后重试，或检查服务器日志）','error');
+      }
+    } else {
+      toast('模型自动加载失败: ' + e.message + '（可稍后重试，或检查服务器日志）','error');
+    }
+  }
+  initInProgress = false;
+  try{
+    const health2 = await pingHealth();
+    dot.className = 'status-dot on';
+    txt.textContent = Config.apiBase.replace(/^https?:\/\//,'');
+    updateLmStat(health2);
+    loadModels();
+  }catch(e){}
+}
+
+/* Accepts either /health data or /v1/model_inventory data —
+   both carry llm_initialized + loaded_lm_model. */
+function updateLmStat(d){
+  const el = document.getElementById('statLm');
+  if (!el || !d) return;
+  if (d.llm_initialized && d.loaded_lm_model){
+    el.textContent = String(d.loaded_lm_model).replace('acestep-5Hz-lm-','');
+    el.style.color = 'var(--amber)';
+    el.title = d.loaded_lm_model;
+  } else {
+    el.textContent = '未加载';
+    el.style.color = 'var(--red)';
+    el.title = 'LM 未加载时，AI 深度规划 / 润色 / CoT 均不生效，人声咬字会明显变差';
+  }
+}
+
+async function loadModels(){
+  try{
+    const data = await modelInventory();
+    const sel = document.getElementById('modelSelect');
+    const current = sel.value;
+    sel.innerHTML = '<option value="">默认模型' + (data.default_model ? (' · '+data.default_model) : '') + '</option>';
+    (data.models||[]).forEach(m=>{
+      const opt = document.createElement('option');
+      opt.value = m.name;
+      opt.textContent = m.name + (m.is_default ? '（默认）':'') + (m.is_loaded ? ' ●已加载' : '');
+      sel.appendChild(opt);
+    });
+    sel.value = current;
+    updateLmStat(data);
+  }catch(e){ /* silent */ }
+}
+async function refreshStats(){
+  try{
+    const s = await getStats();
+    document.getElementById('statQueue').textContent = nz(s.queue_size, '–');
+    document.getElementById('statRunning').textContent = nz((s.jobs && s.jobs.running), '–');
+    document.getElementById('statAvg').textContent = s.avg_job_seconds ? (s.avg_job_seconds.toFixed(1)+'s') : '–';
+  }catch(e){}
+}
+setInterval(()=>{ if(connected) refreshStats(); }, 8000);
+
+/* ============================================================
+   Page tabs (Studio / Library)
+   ============================================================ */
+document.querySelectorAll('.page-tab').forEach(tab=>{
+  tab.addEventListener('click', ()=>{
+    document.querySelectorAll('.page-tab').forEach(t=>t.classList.remove('active'));
+    tab.classList.add('active');
+    const page = tab.dataset.page;
+    document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active', p.dataset.pagePanel===page));
+    /* the fixed generate bar only belongs to the create page; on queue/library
+       it covered the bottom actions (download button) of the last card */
+    const genBar = document.querySelector('.sticky-generate');
+    if (genBar) genBar.style.display = (page === 'create') ? 'flex' : 'none';
+    if (page === 'library') renderLibrary();
+  });
+});
+
+/* ============================================================
+   Mode tabs (Write / Describe / Remix)
+   ============================================================ */
+let currentMode = 'write';
+document.querySelectorAll('.mode-tab').forEach(tab=>{
+  tab.addEventListener('click', ()=>{
+    document.querySelectorAll('.mode-tab').forEach(t=>t.classList.remove('active'));
+    tab.classList.add('active');
+    currentMode = tab.dataset.mode;
+    document.querySelectorAll('.mode-panel').forEach(p=>p.classList.toggle('active', p.dataset.modePanel === currentMode));
+  });
+});
+
+/* ============================================================
+   Lyrics toolbar
+   ============================================================ */
+document.querySelectorAll('.tag-chip[data-insert]').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    const ta = document.getElementById(btn.dataset.target || 'lyrics');
+    const text = btn.dataset.insert.replace('\\n','\n');
+    const start = ta.selectionStart, end = ta.selectionEnd;
+    ta.value = ta.value.slice(0,start) + text + ta.value.slice(end);
+    ta.focus();
+    ta.selectionStart = ta.selectionEnd = start + text.length;
+  });
+});
+document.getElementById('remixUseCustomLyrics').addEventListener('change', function(){
+  document.getElementById('remixLyricsField').style.display = this.checked ? 'block' : 'none';
+});
+
+/* ============================================================
+   Chinese-vocal helpers: auto vocal_language + lyric hints.
+   Explicit vocal_language beats letting the model guess, and
+   short clearly-segmented lines measurably improve articulation.
+   ============================================================ */
+const CJK_RE = /[一-鿿]/;
+let autoZhToastShown = false;
+function maybeAutoZh(text){
+  if (!CJK_RE.test(text)) return;
+  const sel = document.getElementById('vocalLanguage');
+  if (sel.value !== '') return;
+  sel.value = 'zh';
+  if (!autoZhToastShown){
+    autoZhToastShown = true;
+    toast('检测到中文歌词，演唱语言已自动设为中文（明确指定语言咬字更准，可在曲目参数里改回）','success');
+  }
+}
+function lyricHints(text){
+  const msgs = [];
+  if (!text.trim()) return msgs;
+  const lines = text.split('\n');
+  const contentLines = lines.filter(l=>l.trim() && !/^\s*\[[^\]]*\]\s*$/.test(l.trim()));
+  const hasTag = lines.some(l=>/^\s*\[[^\]]+\]\s*$/.test(l));
+  if (!hasTag && contentLines.length >= 3) msgs.push('建议用 [Verse] / [Chorus] 标签分段——段落清晰能明显改善咬字与结构');
+  const longLines = [];
+  lines.forEach((ln,i)=>{
+    const t = ln.trim();
+    if (!t || /^\[[^\]]*\]$/.test(t)) return;
+    const cjk = (t.match(/[一-鿿]/g)||[]).length;
+    if (cjk >= 14) longLines.push(i+1);
+  });
+  if (longLines.length) msgs.push('第 ' + longLines.slice(0,6).join('、') + ' 行偏长——中文每行 6～10 个字，发音和旋律对齐最稳');
+  if (hasTag && contentLines.length > 6 && text.indexOf('\n\n') === -1) msgs.push('段落之间加一个空行，模型更容易分清段落边界');
+  return msgs;
+}
+function bindLyricHints(taId, hintId){
+  const ta = document.getElementById(taId);
+  const box = document.getElementById(hintId);
+  if (!ta || !box) return;
+  let timer = null;
+  ta.addEventListener('input', ()=>{
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(()=>{
+      maybeAutoZh(ta.value);
+      const msgs = lyricHints(ta.value);
+      box.innerHTML = '';
+      msgs.forEach(m=>{
+        const d = document.createElement('div');
+        d.textContent = '♪ ' + m;
+        box.appendChild(d);
+      });
+      box.style.display = msgs.length ? 'block' : 'none';
+    }, 450);
+  });
+}
+bindLyricHints('lyrics','lyricsHint');
+bindLyricHints('remixLyrics','remixLyricsHint');
+
+document.getElementById('vocalPersona').addEventListener('change', function(){
+  document.getElementById('personaHint').style.display = /duet|choir/.test(this.value) ? 'block' : 'none';
+});
+
+/* Instruments get silently dropped when the LM rewrites the caption (use_cot_caption).
+   Warn whenever both are active. Summary div is watched via MutationObserver because
+   presets/templates change the selection without firing 'change'. */
+function updateInstrumentHint(){
+  const box = document.getElementById('instrumentHint');
+  if (!box) return;
+  const show = selectedInstruments.size > 0 && document.getElementById('cotCaption').checked;
+  box.style.display = show ? 'block' : 'none';
+}
+document.getElementById('cotCaption').addEventListener('change', updateInstrumentHint);
+new MutationObserver(updateInstrumentHint).observe(document.getElementById('instrumentSummary'), {childList:true});
+
+/* ============================================================
+   Style / Instrument tag pickers
+   ============================================================ */
+const STYLE_GROUPS = [
+  {label:'主流流行 Mainstream & Pop', items:[
+    ['流行','Pop'],['摇滚','Rock'],['说唱','Hip-Hop'],['电子','Electronic'],['R&B / 灵魂','R&B/Soul'],
+    ['民谣','Folk'],['蓝调','Blues'],['美声 / 古典','Classical'],['乡村','Country'],['雷鬼','Reggae'],
+    ['朋克','Punk'],['重金属','Metal'],['独立','Indie'],['City Pop','City Pop'],['拉丁流行','Latin Pop']]},
+  /* 具体剧种（京剧/越剧/黄梅戏等）已删除：模型对这些风格没有可靠支持，
+     出来的完全不是那个味（用户原则：只留成熟风格）。想要戏曲味的正确路径
+     是翻唱模式 + 上传真实戏曲录音做风格参考，不是文字标签。 */
+  {label:'国风与戏腔 Guofeng', items:[
+    ['国风','Guofeng'],
+    ['戏腔·国风融合','Peking opera vocals (Xiqiang) fused with modern pop production']]},
+  {label:'世界音乐 World Music', items:[
+    ['美式乡村','Americana'],['爵士','Jazz'],['拉美音乐','Latin American'],
+    ['墨西哥音乐','Mexican Mariachi'],['弗拉门戈','Flamenco'],['波萨诺瓦','Bossa Nova'],['凯尔特','Celtic'],
+    ['韩风','K-Pop'],['日风','J-Pop'],['雷鬼顿','Reggaeton']]},
+  /* 以下标签官方随机样本里从未出现过，模型支持度存疑，单独标注让用户自担风险 */
+  {label:'实验性 · 效果不保证 Experimental', items:[
+    ['非洲音乐','African'],['印度音乐','Bollywood'],['尼泊尔音乐','Nepali Folk'],['阿拉伯音乐','Arabic'],
+    ['蒙古音乐','Mongolian'],['藏族音乐','Tibetan'],['巴尔干铜管','Balkan Brass']]},
+];
+const INSTRUMENT_GROUPS = [
+  {label:'键盘与西洋乐 Keys & Western', items:[
+    ['钢琴','Piano'],['木吉他','Acoustic Guitar'],['电吉他','Electric Guitar'],['贝斯','Bass'],['鼓组','Drums'],
+    ['小提琴','Violin'],['大提琴','Cello'],['低音提琴','Double Bass'],['萨克斯','Saxophone'],['小号','Trumpet'],
+    ['长笛','Flute'],['单簧管','Clarinet'],['手风琴','Accordion'],['合成器','Synthesizer'],['尤克里里','Ukulele'],
+    ['班卓琴','Banjo'],['曼陀林','Mandolin']]},
+  {label:'中国民乐 Chinese Traditional', items:[
+    ['古筝','Guzheng'],['古琴','Guqin'],['二胡','Erhu'],['琵琶','Pipa'],['笛子','Dizi'],['唢呐','Suona'],['扬琴','Yangqin']]},
+  {label:'世界乐器（实验性）World · Experimental', items:[
+    ['非洲鼓','Djembe'],['塔布拉鼓','Tabla'],['西塔琴','Sitar'],['马头琴','Morin Khuur']]},
+];
+
+const selectedStyles = new Set();
+const selectedInstruments = new Set();
+
+function setupTagSelect(selectId, groups, selectedSet, summaryId){
+  const sel = document.getElementById(selectId);
+  const cnMap = {};
+  sel.innerHTML = '';
+  groups.forEach(group=>{
+    const og = document.createElement('optgroup');
+    og.label = group.label;
+    group.items.forEach(([cn,en])=>{
+      cnMap[en] = cn;
+      const opt = document.createElement('option');
+      opt.value = en; opt.textContent = cn + '  ' + en;
+      og.appendChild(opt);
+    });
+    sel.appendChild(og);
+  });
+  function renderTagSummary(){
+    const el = document.getElementById(summaryId);
+    el.innerHTML = '';
+    [...selectedSet].forEach(en=>{
+      const chip = document.createElement('span');
+      chip.className = 'chip selected';
+      chip.style.cursor = 'pointer';
+      chip.innerHTML = (cnMap[en]||en) + '<span class="x">×</span>';
+      chip.addEventListener('click', ()=>{
+        const opt = Array.prototype.filter.call(sel.options, o=>o.value===en)[0];
+        if (opt) opt.selected = false;
+        sync();
+      });
+      el.appendChild(chip);
+    });
+  }
+  function sync(){
+    selectedSet.clear();
+    Array.prototype.forEach.call(sel.selectedOptions, o=>selectedSet.add(o.value));
+    renderTagSummary();
+  }
+  sel.addEventListener('change', sync);
+  sel.clearAll = function(){ Array.prototype.forEach.call(sel.options, o=>{ o.selected = false; }); sync(); };
+  sel.selectOnly = function(value){ Array.prototype.forEach.call(sel.options, o=>{ o.selected = (o.value===value); }); sync(); };
+  sel.selectMany = function(values){ const set = new Set(values||[]); Array.prototype.forEach.call(sel.options, o=>{ o.selected = set.has(o.value); }); sync(); };
+  return sel;
+}
+const styleSelectEl = setupTagSelect('styleSelect', STYLE_GROUPS, selectedStyles, 'styleSummary');
+const instrumentSelectEl = setupTagSelect('instrumentSelect', INSTRUMENT_GROUPS, selectedInstruments, 'instrumentSummary');
+
+document.getElementById('presetClear').addEventListener('click', ()=>{
+  styleSelectEl.clearAll();
+  instrumentSelectEl.clearAll();
+});
+document.getElementById('presetGuitarSing').addEventListener('click', ()=>{
+  document.getElementById('caption').value = (document.getElementById('caption').value.trim() ? document.getElementById('caption').value.trim()+', ' : '') + 'intimate singer-songwriter, solo acoustic guitar accompaniment, warm close-mic vocal';
+  instrumentSelectEl.selectOnly('Acoustic Guitar');
+  toast('已应用「吉他弹唱」预设');
+});
+document.getElementById('presetGuitarSolo').addEventListener('click', ()=>{
+  document.getElementById('caption').value = 'solo instrumental acoustic guitar, fingerstyle, no vocals, warm and intimate tone';
+  document.getElementById('lyrics').value = '[Instrumental]';
+  instrumentSelectEl.selectOnly('Acoustic Guitar');
+  toast('已应用「纯吉他独奏」预设，歌词已清空为纯乐器标记');
+});
+
+/* ============================================================
+   Templates (curated: 14 style + 12 scenario)
+   ============================================================ */
+const TEMPLATES = {
+  style: [
+    {id:'pop_ballad', name_cn:'都市流行', name_en:'Pop Ballad', description:'干净现代流行，情绪细腻', caption_seed:'modern city pop ballad, clean production, emotional vocal, warm synths and piano', suggested_instruments:['Piano','Synthesizer','Bass','Drums'], bpm_range:[90,110], key_scale_hint:'A Minor', model_recommendation:'acestep-v15-xl-turbo', params:{inference_steps:8, guidance_scale:7.0, cfg_interval_start:0.4, cfg_interval_end:1.0, infer_method:'ode'}},
+    {id:'funk_groove', name_cn:'放克律动', name_en:'Funk Groove', description:'Funk/R&B，抓耳、节奏感强', caption_seed:'funky groove, tight rhythm section, slap bass, syncopated guitar, catchy hook', suggested_instruments:['Bass','Electric Guitar','Drums','Saxophone'], bpm_range:[100,115], key_scale_hint:'E Minor', model_recommendation:'acestep-v15-xl-turbo', params:{inference_steps:8, guidance_scale:7.0, cfg_interval_start:0.4, cfg_interval_end:1.0, infer_method:'ode'}},
+    {id:'rock_anthem', name_cn:'摇滚燃曲', name_en:'Rock Anthem', description:'能量感强的摇滚，适合燃向内容', caption_seed:'energetic rock anthem, driving electric guitar, powerful drums, anthemic chorus', suggested_instruments:['Electric Guitar','Bass','Drums'], bpm_range:[120,140], key_scale_hint:'D Major', model_recommendation:'acestep-v15-xl-turbo', params:{inference_steps:8, guidance_scale:7.5, cfg_interval_start:0.45, cfg_interval_end:1.0, infer_method:'ode'}},
+    {id:'acoustic_folk', name_cn:'民谣弹唱', name_en:'Acoustic Folk', description:'木吉他伴奏，安静叙事', caption_seed:'intimate acoustic folk, fingerstyle guitar, warm close-mic vocal, storytelling mood', suggested_instruments:['Acoustic Guitar'], bpm_range:[70,90], key_scale_hint:'G Major', model_recommendation:'acestep-v15-xl-turbo', params:{inference_steps:8, guidance_scale:7.0, cfg_interval_start:0.4, cfg_interval_end:1.0, infer_method:'ode'}},
+    {id:'hiphop_flow', name_cn:'说唱律动', name_en:'Hip-Hop Flow', description:'Hip-Hop 节拍 + flow', caption_seed:'modern hip-hop beat, punchy 808 bass, crisp hi-hats, confident rap flow', suggested_instruments:['Bass','Drums','Synthesizer'], bpm_range:[85,100], key_scale_hint:'F Minor', model_recommendation:'acestep-v15-xl-turbo', params:{inference_steps:8, guidance_scale:7.0, cfg_interval_start:0.45, cfg_interval_end:1.0, infer_method:'ode'}},
+    {id:'guofeng', name_cn:'国风雅韵', name_en:'Guofeng', description:'古筝/古琴/笛子，古风气质', caption_seed:'chinese guofeng style, guzheng and dizi, elegant and flowing, traditional instrumentation', suggested_instruments:['Guzheng','Guqin','Dizi'], bpm_range:[70,100], key_scale_hint:'D Minor', model_recommendation:'acestep-v15-xl-turbo', params:{inference_steps:8, guidance_scale:7.5, cfg_interval_start:0.5, cfg_interval_end:1.0, infer_method:'ode'}},
+    {id:'edm_dance', name_cn:'电子舞曲', name_en:'EDM Dance', description:'适合动感场景', caption_seed:'uplifting EDM dance track, punchy kick, bright synth leads, big drop', suggested_instruments:['Synthesizer','Drums','Bass'], bpm_range:[125,135], key_scale_hint:'A Minor', model_recommendation:'acestep-v15-xl-turbo', params:{inference_steps:8, guidance_scale:7.5, cfg_interval_start:0.4, cfg_interval_end:1.0, infer_method:'ode'}},
+    {id:'jazz_lounge', name_cn:'爵士小酒馆', name_en:'Jazz Lounge', description:'慵懒爵士，萨克斯/钢琴', caption_seed:'smoky jazz lounge, brushed drums, upright bass, smooth saxophone, laid-back vocal', suggested_instruments:['Saxophone','Piano','Double Bass','Drums'], bpm_range:[80,100], key_scale_hint:'Bb Major', model_recommendation:'acestep-v15-xl-turbo', params:{inference_steps:8, guidance_scale:7.0, cfg_interval_start:0.45, cfg_interval_end:1.0, infer_method:'ode'}},
+    {id:'blues', name_cn:'蓝调', name_en:'Blues', description:'慵懒忧郁，人声表现力强', caption_seed:'soulful blues, expressive guitar bends, raw emotive vocal, slow burn groove', suggested_instruments:['Electric Guitar','Piano','Drums'], bpm_range:[70,95], key_scale_hint:'A Minor', model_recommendation:'acestep-v15-xl-turbo', params:{inference_steps:8, guidance_scale:7.0, cfg_interval_start:0.45, cfg_interval_end:1.0, infer_method:'ode'}},
+    {id:'rnb_ballad', name_cn:'R&B 抒情', name_en:'R&B Ballad', description:'比放克更慢，走心的转音多', caption_seed:'slow R&B ballad, smooth vocal runs, warm electric piano, intimate and heartfelt', suggested_instruments:['Piano','Bass','Drums'], bpm_range:[65,85], key_scale_hint:'Eb Major', model_recommendation:'acestep-v15-xl-turbo', params:{inference_steps:8, guidance_scale:7.0, cfg_interval_start:0.45, cfg_interval_end:1.0, infer_method:'ode'}},
+    {id:'city_pop', name_cn:'City Pop', name_en:'City Pop', description:'都市感强，干净利落，日系底子', caption_seed:'80s-inspired city pop, glossy synths, funky bassline, breezy nostalgic vocal', suggested_instruments:['Synthesizer','Bass','Electric Guitar','Drums'], bpm_range:[100,115], key_scale_hint:'F Major', model_recommendation:'acestep-v15-xl-turbo', params:{inference_steps:8, guidance_scale:7.0, cfg_interval_start:0.4, cfg_interval_end:1.0, infer_method:'ode'}},
+    {id:'latin_heat', name_cn:'拉丁热情', name_en:'Latin Heat', description:'Reggaeton/Latin，节奏抓人', caption_seed:'latin reggaeton groove, dembow rhythm, bright brass stabs, energetic vocal', suggested_instruments:['Drums','Bass','Synthesizer'], bpm_range:[90,100], key_scale_hint:'C Minor', model_recommendation:'acestep-v15-xl-turbo', params:{inference_steps:8, guidance_scale:7.5, cfg_interval_start:0.45, cfg_interval_end:1.0, infer_method:'ode'}},
+    {id:'country_folk', name_cn:'乡村民谣', name_en:'Country Folk', description:'美式 Country，讲故事的调调', caption_seed:'american country folk, warm acoustic guitar, gentle banjo, heartfelt storytelling vocal', suggested_instruments:['Acoustic Guitar','Banjo'], bpm_range:[85,105], key_scale_hint:'G Major', model_recommendation:'acestep-v15-xl-turbo', params:{inference_steps:8, guidance_scale:7.0, cfg_interval_start:0.4, cfg_interval_end:1.0, infer_method:'ode'}},
+    {id:'indie_bedroom', name_cn:'独立小清新', name_en:'Indie Bedroom Pop', description:'Indie/Bedroom Pop，轻盈治愈', caption_seed:'dreamy indie bedroom pop, lo-fi warmth, soft synths, breathy intimate vocal', suggested_instruments:['Synthesizer','Acoustic Guitar','Drums'], bpm_range:[90,110], key_scale_hint:'C Major', model_recommendation:'acestep-v15-xl-turbo', params:{inference_steps:8, guidance_scale:7.0, cfg_interval_start:0.4, cfg_interval_end:1.0, infer_method:'ode'}}
+  ],
+  scenario: [
+    {id:'birthday', name_cn:'生日祝福', name_en:'Birthday', description:'欢快、温暖，适合送给朋友', caption_seed:'warm and joyful birthday celebration song, upbeat and playful, feel-good energy', bpm_range:[100,120], model_recommendation:'acestep-v15-xl-turbo', params:{inference_steps:8, guidance_scale:7.0, cfg_interval_start:0.4, cfg_interval_end:1.0, infer_method:'ode'}},
+    {id:'wedding', name_cn:'婚礼告白', name_en:'Wedding Confession', description:'深情、浪漫', caption_seed:'romantic wedding love song, tender strings and piano, heartfelt and sincere', bpm_range:[70,90], model_recommendation:'acestep-v15-xl-turbo', params:{inference_steps:8, guidance_scale:7.0, cfg_interval_start:0.45, cfg_interval_end:1.0, infer_method:'ode'}},
+    {id:'lullaby', name_cn:'哄睡童谣', name_en:'Lullaby', description:'轻柔、简单重复，适合哄娃', caption_seed:'gentle lullaby, soft music box and piano, slow and soothing, simple repetitive melody', bpm_range:[55,70], model_recommendation:'acestep-v15-xl-turbo', params:{inference_steps:8, guidance_scale:6.5, cfg_interval_start:0.5, cfg_interval_end:1.0, infer_method:'ode'}},
+    {id:'meditation', name_cn:'冥想放松', name_en:'Meditation (Instrumental)', description:'无人声，安静氛围', caption_seed:'calm ambient meditation music, no vocals, soft pads, gentle nature-inspired textures', bpm_range:[50,70], model_recommendation:'acestep-v15-xl-turbo', params:{inference_steps:8, guidance_scale:6.5, cfg_interval_start:0.5, cfg_interval_end:1.0, infer_method:'ode'}},
+    {id:'motivational', name_cn:'励志加油', name_en:'Motivational', description:'昂扬、鼓劲', caption_seed:'uplifting motivational anthem, building energy, triumphant and inspiring', bpm_range:[110,130], model_recommendation:'acestep-v15-xl-turbo', params:{inference_steps:8, guidance_scale:7.5, cfg_interval_start:0.45, cfg_interval_end:1.0, infer_method:'ode'}},
+    {id:'breakup_healing', name_cn:'分手疗伤', name_en:'Breakup / Healing', description:'低落但治愈的情绪线', caption_seed:'melancholic yet healing breakup ballad, gentle piano, bittersweet emotional arc', bpm_range:[65,85], model_recommendation:'acestep-v15-xl-turbo', params:{inference_steps:8, guidance_scale:7.0, cfg_interval_start:0.45, cfg_interval_end:1.0, infer_method:'ode'}},
+    {id:'graduation', name_cn:'毕业告别', name_en:'Graduation / Farewell', description:'不舍但温暖，适合送别', caption_seed:'bittersweet farewell song, warm nostalgic tone, gentle build, hopeful ending', bpm_range:[80,100], model_recommendation:'acestep-v15-xl-turbo', params:{inference_steps:8, guidance_scale:7.0, cfg_interval_start:0.4, cfg_interval_end:1.0, infer_method:'ode'}},
+    {id:'holiday_festive', name_cn:'节日氛围', name_en:'Holiday Festive', description:'圣诞/新年，热闹喜庆', caption_seed:'festive holiday celebration music, jingling bells, warm brass, joyful and bright', bpm_range:[100,120], model_recommendation:'acestep-v15-xl-turbo', params:{inference_steps:8, guidance_scale:7.0, cfg_interval_start:0.4, cfg_interval_end:1.0, infer_method:'ode'}},
+    {id:'pet_daily', name_cn:'萌宠日常', name_en:'Cute Pet Daily', description:'轻快可爱，适合配宠物/vlog', caption_seed:'cute playful background music, bouncy ukulele, light and whimsical', bpm_range:[100,115], model_recommendation:'acestep-v15-xl-turbo', params:{inference_steps:8, guidance_scale:7.0, cfg_interval_start:0.4, cfg_interval_end:1.0, infer_method:'ode'}},
+    {id:'roadtrip', name_cn:'公路旅行', name_en:'Roadtrip', description:'自由感，适合路上听', caption_seed:'breezy roadtrip anthem, driving guitar rhythm, open and free feeling', bpm_range:[100,120], model_recommendation:'acestep-v15-xl-turbo', params:{inference_steps:8, guidance_scale:7.0, cfg_interval_start:0.4, cfg_interval_end:1.0, infer_method:'ode'}},
+    {id:'corporate_intro', name_cn:'展示片头', name_en:'Corporate Intro', description:'商务/短片开场，干净有质感', caption_seed:'clean corporate intro music, no vocals, confident and modern, subtle build', bpm_range:[95,115], model_recommendation:'acestep-v15-xl-turbo', params:{inference_steps:8, guidance_scale:7.0, cfg_interval_start:0.5, cfg_interval_end:1.0, infer_method:'ode'}},
+    {id:'workout', name_cn:'运动健身', name_en:'Workout', description:'强节奏，适合撸铁/跑步', caption_seed:'high energy workout music, driving beat, powerful and motivating, no vocals', bpm_range:[130,150], model_recommendation:'acestep-v15-xl-turbo', params:{inference_steps:8, guidance_scale:7.5, cfg_interval_start:0.4, cfg_interval_end:1.0, infer_method:'ode'}}
+  ]
+};
+
+let scenarioLyricsChoice = 'instrumental';
+
+function renderTemplateGrid(gridId, list, category){
+  const grid = document.getElementById(gridId);
+  grid.innerHTML = '';
+  list.forEach(tpl=>{
+    const card = document.createElement('div');
+    card.className = 'tpl-card';
+    card.innerHTML = '<div class="tpl-name">'+escapeHtml(tpl.name_cn)+'</div>'+
+      '<div class="tpl-en">'+escapeHtml(tpl.name_en)+'</div>'+
+      '<div class="tpl-desc">'+escapeHtml(tpl.description)+'</div>';
+    card.addEventListener('click', ()=>applyTemplate(tpl, category));
+    grid.appendChild(card);
+  });
+}
+renderTemplateGrid('tplStyleGrid', TEMPLATES.style, 'style');
+renderTemplateGrid('tplScenarioGrid', TEMPLATES.scenario, 'scenario');
+
+document.querySelectorAll('.subtab[data-tplsub]').forEach(tab=>{
+  tab.addEventListener('click', ()=>{
+    document.querySelectorAll('.subtab[data-tplsub]').forEach(t=>t.classList.remove('active'));
+    tab.classList.add('active');
+    const which = tab.dataset.tplsub;
+    document.getElementById('tplStyleView').style.display = which==='style' ? 'block' : 'none';
+    document.getElementById('tplScenarioView').style.display = which==='scenario' ? 'block' : 'none';
+  });
+});
+document.querySelectorAll('.subtab[data-lyricchoice]').forEach(tab=>{
+  tab.addEventListener('click', ()=>{
+    document.querySelectorAll('.subtab[data-lyricchoice]').forEach(t=>t.classList.remove('active'));
+    tab.classList.add('active');
+    scenarioLyricsChoice = tab.dataset.lyricchoice;
+  });
+});
+
+function applyTemplate(tpl, category){
+  document.getElementById('caption').value = tpl.caption_seed;
+  if (tpl.suggested_instruments && tpl.suggested_instruments.length){
+    instrumentSelectEl.selectMany(tpl.suggested_instruments);
+  }
+  if (tpl.bpm_range){
+    document.getElementById('bpm').value = Math.round((tpl.bpm_range[0]+tpl.bpm_range[1])/2);
+  }
+  if (tpl.key_scale_hint) document.getElementById('keyScale').value = tpl.key_scale_hint;
+  if (tpl.model_recommendation){
+    const modelSel = document.getElementById('modelSelect');
+    modelSel.value = tpl.model_recommendation;
+  }
+  if (tpl.params){
+    if ('inference_steps' in tpl.params) document.getElementById('inferenceSteps').value = tpl.params.inference_steps;
+    if ('guidance_scale' in tpl.params) document.getElementById('guidanceScale').value = tpl.params.guidance_scale;
+    if ('cfg_interval_start' in tpl.params) document.getElementById('cfgStart').value = tpl.params.cfg_interval_start;
+    if ('cfg_interval_end' in tpl.params) document.getElementById('cfgEnd').value = tpl.params.cfg_interval_end;
+    if ('infer_method' in tpl.params) document.getElementById('inferMethod').value = tpl.params.infer_method;
+  }
+
+  if (category === 'scenario'){
+    const lyricsEl = document.getElementById('lyrics');
+    const useFormatEl2 = document.getElementById('useFormat');
+    if (scenarioLyricsChoice === 'instrumental'){
+      lyricsEl.value = '[Instrumental]';
+      useFormatEl2.checked = false;
+    } else if (scenarioLyricsChoice === 'ai'){
+      lyricsEl.value = '';
+      useFormatEl2.checked = true;
+    } else {
+      lyricsEl.value = '';
+      useFormatEl2.checked = false;
+    }
+  }
+
+  document.querySelector('.mode-tab[data-mode="write"]').click();
+  toast('已应用模板《'+tpl.name_cn+'》','success');
+}
+
+/* ============================================================
+   Task type cards (remix mode)
+   ============================================================ */
+let selectedTaskType = 'cover';
+document.querySelectorAll('.task-card').forEach(card=>{
+  card.addEventListener('click', ()=>{
+    document.querySelectorAll('.task-card').forEach(c=>c.classList.remove('selected'));
+    card.classList.add('selected');
+    selectedTaskType = card.dataset.task;
+    document.getElementById('repaintRange').style.display = (selectedTaskType==='repaint') ? 'grid' : 'none';
+    document.getElementById('coverStrengthField').style.display = (selectedTaskType==='extract') ? 'none' : 'block';
+  });
+});
+
+/* ============================================================
+   Sliders / toggles
+   ============================================================ */
+const coverStrength = document.getElementById('coverStrength');
+coverStrength.addEventListener('input', ()=>{ document.getElementById('coverStrengthVal').textContent = parseFloat(coverStrength.value).toFixed(2); });
+document.getElementById('useRandomSeed').addEventListener('change', function(){ document.getElementById('seedField').style.display = this.checked ? 'none' : 'block'; });
+
+const dualVersionEl = document.getElementById('dualVersion');
+const useFormatEl = document.getElementById('useFormat');
+dualVersionEl.addEventListener('change', function(){ useFormatEl.disabled = this.checked; });
+
+document.getElementById('qualityPresetBtn').addEventListener('click', ()=>{
+  document.getElementById('inferMethod').value = 'sde';
+  document.getElementById('guidanceScale').value = '9.0';
+  document.getElementById('useAdg').checked = true;
+  document.getElementById('thinking').checked = true;
+  document.getElementById('batchSize').value = '4';
+  const steps = document.getElementById('inferenceSteps');
+  if (parseInt(steps.value,10) < 24) steps.value = '32';
+  toast('已应用力度增强预设：SDE + ADG + 更多推理步数，若当前用的是 turbo 模型，建议在「模型」里切到 base 或 xl 模型效果更明显','success');
+});
+
+/* ============================================================
+   Accordion
+   ============================================================ */
+document.querySelectorAll('.accordion').forEach(acc=>{
+  const head = acc.querySelector('.accordion-head');
+  if (head) head.addEventListener('click', ()=>{ acc.classList.toggle('open'); });
+});
+
+/* ============================================================
+   File dropzones
+   ============================================================ */
+function setupDropzone(zoneId, inputId, fileHolderId, onSet){
+  const zone = document.getElementById(zoneId);
+  const input = document.getElementById(inputId);
+  const holder = document.getElementById(fileHolderId);
+  let currentFile = null;
+  function render(){
+    if (!currentFile){ holder.innerHTML=''; onSet(null); return; }
+    holder.innerHTML = '';
+    const row = document.createElement('div');
+    row.className = 'dropzone-file';
+    row.innerHTML = '<span>♪ ' + escapeHtml(currentFile.name) + '</span>';
+    const rm = document.createElement('button');
+    rm.textContent = '×'; rm.type = 'button';
+    rm.addEventListener('click', (e)=>{ e.stopPropagation(); currentFile=null; input.value=''; render(); });
+    row.appendChild(rm);
+    holder.appendChild(row);
+    onSet(currentFile);
+  }
+  input.addEventListener('change', ()=>{ if (input.files && input.files[0]){ currentFile = input.files[0]; render(); } });
+  ['dragover','dragenter'].forEach(ev=>zone.addEventListener(ev, e=>{ e.preventDefault(); zone.classList.add('drag'); }));
+  ['dragleave','drop'].forEach(ev=>zone.addEventListener(ev, e=>{ e.preventDefault(); zone.classList.remove('drag'); }));
+  zone.addEventListener('drop', e=>{ const f = e.dataTransfer.files && e.dataTransfer.files[0]; if (f){ currentFile = f; render(); } });
+}
+let srcAudioFile = null, refAudioFile = null;
+setupDropzone('srcDropzone','srcAudioInput','srcAudioFile', f=>srcAudioFile=f);
+setupDropzone('refDropzone','refAudioInput','refAudioFile', f=>refAudioFile=f);
+
+/* ============================================================
+   Random sample
+   ============================================================ */
+document.getElementById('randomSampleBtn').addEventListener('click', async ()=>{
+  if (!connected){ toast('请先在设置中连接到 ACE-Step 服务','error'); return; }
+  try{
+    const data = await createRandomSample('random');
+    if (data.caption) document.getElementById('caption').value = data.caption;
+    if (data.lyrics){ const ly=document.getElementById('lyrics'); ly.value = data.lyrics; ly.dispatchEvent(new Event('input')); }
+    if (data.bpm) document.getElementById('bpm').value = data.bpm;
+    if (data.keyscale) document.getElementById('keyScale').value = data.keyscale;
+    if (data.duration) document.getElementById('duration').value = Math.round(data.duration);
+    if (data.language){ const vs=document.getElementById('vocalLanguage'); if ([].some.call(vs.options, o=>o.value===data.language)) vs.value = data.language; }
+    toast('已填入随机灵感 ✨（可整体使用，也可只留描述换上自己的歌词）','success');
+  }catch(e){ toast('获取灵感失败: '+e.message, 'error'); }
+});
+
+/* ============================================================
+   Title generation
+   ============================================================ */
+function craftTitle(){
+  const cap = document.getElementById('caption').value.trim();
+  const lyr = document.getElementById('lyrics').value;
+  const query = document.getElementById('sampleQuery').value.trim();
+  const styles = [...selectedStyles];
+  let base = '';
+  if (currentMode === 'describe' && query) base = query;
+  else if (cap) base = cap;
+  else {
+    const line = lyr.split('\n').map(s=>s.trim()).find(s=>s && !/^\[.*\]$/.test(s));
+    if (line) base = line;
+  }
+  if (!base && styles.length) base = styles[0] + ' 曲目';
+  if (!base) base = '未命名曲目';
+  base = base.split(/[,，。.!！?？;；\n]/)[0].trim();
+  if (base.length>20) base = base.slice(0,20)+'…';
+  return base;
+}
+
+/* ============================================================
+   Build payload
+   ============================================================ */
+function numOrNull(id){ const v = document.getElementById(id).value; return v === '' ? null : Number(v); }
+function strOrEmpty(id){ return document.getElementById(id).value.trim(); }
+
+function buildPayload(overrides){
+  overrides = overrides || {};
+  const payload = {
+    audio_format: document.getElementById('audioFormat').value,
+    thinking: document.getElementById('thinking').checked,
+    inference_steps: nz(numOrNull('inferenceSteps'), 8),
+    guidance_scale: nz(numOrNull('guidanceScale'), 7.0),
+    batch_size: nz(numOrNull('batchSize'), 1),
+    shift: nz(numOrNull('shift'), 3.0),
+    infer_method: document.getElementById('inferMethod').value,
+    cfg_interval_start: nz(numOrNull('cfgStart'), 0.0),
+    cfg_interval_end: nz(numOrNull('cfgEnd'), 1.0),
+    use_adg: document.getElementById('useAdg').checked,
+    lm_temperature: nz(numOrNull('lmTemperature'), 0.85),
+    lm_cfg_scale: nz(numOrNull('lmCfgScale'), 2.5),
+    lm_top_p: nz(numOrNull('lmTopP'), 0.9),
+    use_cot_caption: document.getElementById('cotCaption').checked,
+    use_cot_language: document.getElementById('cotLanguage').checked,
+    use_random_seed: document.getElementById('useRandomSeed').checked,
+  };
+  if (!payload.use_random_seed) payload.seed = nz(numOrNull('seed'), -1);
+
+  const duration = numOrNull('duration'); if (duration) payload.audio_duration = duration;
+  const bpm = numOrNull('bpm'); if (bpm) payload.bpm = bpm;
+  const keyScale = strOrEmpty('keyScale'); if (keyScale) payload.key_scale = keyScale;
+  const timeSig = document.getElementById('timeSignature').value; if (timeSig) payload.time_signature = timeSig;
+  let lang = document.getElementById('vocalLanguage').value;
+  if (!lang){
+    const lyrSource = (currentMode==='remix' && document.getElementById('remixUseCustomLyrics').checked)
+      ? document.getElementById('remixLyrics').value
+      : document.getElementById('lyrics').value;
+    if (CJK_RE.test(lyrSource)) lang = 'zh';
+  }
+  if (lang) payload.vocal_language = lang;
+  const model = document.getElementById('modelSelect').value; if (model) payload.model = model;
+
+  let files = {};
+
+  if (currentMode === 'describe'){
+    payload.sample_mode = true;
+    payload.sample_query = strOrEmpty('sampleQuery');
+    if (!payload.sample_query){ throw new Error('请先输入一句描述'); }
+  } else {
+    let caption = strOrEmpty('caption');
+    const lyrics = document.getElementById('lyrics').value;
+    const styleText = [...selectedStyles].join(', ');
+    const instrumentText = [...selectedInstruments].length ? ('featuring prominent ' + [...selectedInstruments].join(', ')) : '';
+    const personaText = document.getElementById('vocalPersona').value;
+    const parts = [personaText, caption, styleText, instrumentText].filter(Boolean);
+    if (parts.length) payload.prompt = parts.join(', ');
+    if (lyrics) payload.lyrics = lyrics;
+    payload.use_format = ('use_format' in overrides) ? overrides.use_format : document.getElementById('useFormat').checked;
+  }
+
+  if (currentMode === 'remix'){
+    payload.task_type = selectedTaskType;
+    payload.audio_cover_strength = parseFloat(coverStrength.value);
+    const instruction = strOrEmpty('instruction');
+    if (instruction) payload.instruction = instruction;
+    if (selectedTaskType === 'repaint'){
+      payload.repainting_start = nz(numOrNull('repaintStart'), 0);
+      const end = numOrNull('repaintEnd');
+      payload.repainting_end = (end === null) ? -1 : end;
+    }
+    const useCustomLyrics = document.getElementById('remixUseCustomLyrics').checked;
+    const remixLyricsVal = document.getElementById('remixLyrics').value;
+    if (useCustomLyrics && remixLyricsVal.trim()){
+      payload.lyrics = remixLyricsVal;
+    } else if (useCustomLyrics && !remixLyricsVal.trim()){
+      throw new Error('已开启「用我自己的歌词翻唱」，请先填写新歌词');
+    }
+    if (!srcAudioFile && selectedTaskType !== 'text2music'){ throw new Error('该任务类型需要上传源音频'); }
+    if (srcAudioFile) files.src = srcAudioFile;
+    if (refAudioFile) files.ref = refAudioFile;
+  } else {
+    payload.task_type = 'text2music';
+  }
+  return {payload, files};
+}
+
+/* ============================================================
+   IndexedDB local library (persists across restarts, caps at N)
+   ============================================================ */
+const DB_NAME='acestep_studio_db', DB_VERSION=1, STORE='tracks';
+function openDB(){
+  return new Promise((resolve,reject)=>{
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onupgradeneeded = ()=>{
+      const db = req.result;
+      if (!db.objectStoreNames.contains(STORE)){
+        const store = db.createObjectStore(STORE, {keyPath:'id', autoIncrement:true});
+        store.createIndex('createdAt','createdAt');
+      }
+    };
+    req.onsuccess = ()=>resolve(req.result);
+    req.onerror = ()=>reject(req.error);
+  });
+}
+async function libAdd(record){
+  const db = await openDB();
+  return new Promise((resolve,reject)=>{
+    const tx = db.transaction(STORE,'readwrite');
+    const req = tx.objectStore(STORE).add(record);
+    req.onsuccess = ()=>resolve(req.result);
+    req.onerror = ()=>reject(req.error);
+    tx.oncomplete = ()=>db.close();
+  });
+}
+async function libGetAll(){
+  const db = await openDB();
+  return new Promise((resolve,reject)=>{
+    const tx = db.transaction(STORE,'readonly');
+    const req = tx.objectStore(STORE).getAll();
+    req.onsuccess = ()=>resolve(req.result.sort((a,b)=>b.createdAt-a.createdAt));
+    req.onerror = ()=>reject(req.error);
+    tx.oncomplete = ()=>db.close();
+  });
+}
+async function libDelete(id){
+  const db = await openDB();
+  return new Promise((resolve,reject)=>{
+    const tx = db.transaction(STORE,'readwrite');
+    tx.objectStore(STORE).delete(id);
+    tx.oncomplete = ()=>{ db.close(); resolve(); };
+    tx.onerror = ()=>reject(tx.error);
+  });
+}
+async function libEnforceCap(cap){
+  const all = await libGetAll();
+  if (all.length <= cap) return;
+  const excess = all.slice(cap);
+  for (const rec of excess) await libDelete(rec.id);
+}
+async function addTrackToLibrary({title, blob, meta, ext, snapshot}){
+  await libAdd({title, blob, meta: meta||'', ext: ext||'mp3', snapshot: snapshot||null, createdAt: Date.now()});
+  await libEnforceCap(Config.libraryCap);
+  updateLibraryBadge();
+  const activePage = document.querySelector('.page.active');
+  if (activePage && activePage.dataset.pagePanel === 'library') renderLibrary();
+}
+async function updateLibraryBadge(){
+  const all = await libGetAll();
+  document.getElementById('libCountBadge').textContent = all.length ? ('('+all.length+')') : '';
+}
+
+let libraryObjectUrls = [];
+async function renderLibrary(){
+  libraryObjectUrls.forEach(u=>URL.revokeObjectURL(u));
+  libraryObjectUrls = [];
+  const all = await libGetAll();
+  const grid = document.getElementById('libraryGrid');
+  const empty = document.getElementById('libraryEmpty');
+  grid.innerHTML = '';
+  empty.style.display = all.length ? 'none' : 'block';
+  document.getElementById('storageLabel').textContent = all.length + ' / ' + Config.libraryCap;
+  document.getElementById('storageFill').style.width = Math.min(100, (all.length/Config.libraryCap*100)) + '%';
+
+  all.forEach(rec=>{
+    const url = URL.createObjectURL(rec.blob);
+    libraryObjectUrls.push(url);
+    const card = document.createElement('div');
+    card.className = 'lib-card';
+    card.innerHTML = '<div class="lib-card-top"><div class="lib-title">'+escapeHtml(rec.title)+'</div>'+
+      '<div class="lib-date">'+new Date(rec.createdAt).toLocaleString()+'</div></div>'+
+      '<div class="lib-meta">'+escapeHtml(rec.meta||'')+'</div>';
+    const trackEl = buildTrackEl(url, rec.title, {ext: rec.ext, blob: rec.blob, snapshot: rec.snapshot});
+    const delBtn = document.createElement('button');
+    delBtn.className = 'danger'; delBtn.textContent = '🗑 删除';
+    delBtn.addEventListener('click', async ()=>{ await libDelete(rec.id); toast('已从曲库删除','success'); renderLibrary(); updateLibraryBadge(); });
+    trackEl.querySelector('.track-actions').appendChild(delBtn);
+    card.appendChild(trackEl);
+    grid.appendChild(card);
+  });
+}
+document.getElementById('clearLibraryBtn').addEventListener('click', async ()=>{
+  const all = await libGetAll();
+  if (!all.length) return;
+  if (!confirm('确定要清空本地曲库吗？共 '+all.length+' 首，此操作不可恢复。')) return;
+  for (const rec of all) await libDelete(rec.id);
+  toast('曲库已清空','success');
+  renderLibrary(); updateLibraryBadge();
+});
+
+/* ============================================================
+   Blob download helper (fixes: clicking download opened a new tab
+   instead of saving the file — now always saves directly)
+   ============================================================ */
+function sanitizeFilename(name){
+  return (name||'acestep_track').replace(/[\\/:*?"<>|]/g,'_').replace(/\s+/g,' ').trim().slice(0,60) || 'acestep_track';
+}
+function triggerDownload(blob, filename){
+  /* Inside the Android app (WebView), blob downloads never reach the system
+     downloader — hand the bytes to the native bridge instead. window.AndroidBridge
+     only exists in the app; in normal browsers this branch is skipped. */
+  if (window.AndroidBridge && window.AndroidBridge.saveFile){
+    const fr = new FileReader();
+    fr.onload = function(){
+      const base64 = String(fr.result).split(',')[1] || '';
+      window.AndroidBridge.saveFile(filename, base64, blob.type || 'audio/mpeg');
+    };
+    fr.readAsDataURL(blob);
+    return;
+  }
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 4000);
+}
+
+/* ============================================================
+   Track / player component (shared by queue + library)
+   ============================================================ */
+function fmtTime(sec){ if (!isFinite(sec) || sec<0) sec=0; const m=Math.floor(sec/60), s=Math.floor(sec%60); return String(m)+':'+String(s).padStart(2,'0'); }
+
+/* Playback loudness boost: ACE-Step normalizes output to -1dB peak server-side
+   (hardcoded), which sounds much quieter than commercial masters like Suno's.
+   Boost + limiter on the playback path only; downloaded files stay untouched.
+   Only safe for blob: URLs — cross-origin media routed through WebAudio goes silent. */
+/* new Audio() elements never enter the DOM, so document.querySelectorAll('audio')
+   can't see them — track them here so "pause the others on play" actually works */
+const allAudios = [];
+let audioCtx = null;
+function attachLoudnessBoost(audioEl){
+  if (!Config.loudBoost) return;
+  try{
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    if (!audioCtx) audioCtx = new AC();
+    const gain = audioCtx.createGain();
+    gain.gain.value = 2.0;
+    const limiter = audioCtx.createDynamicsCompressor();
+    limiter.threshold.value = -3; limiter.knee.value = 3; limiter.ratio.value = 20;
+    limiter.attack.value = 0.002; limiter.release.value = 0.1;
+    const src = audioCtx.createMediaElementSource(audioEl);
+    src.connect(gain); gain.connect(limiter); limiter.connect(audioCtx.destination);
+    audioEl.addEventListener('play', ()=>{ if (audioCtx.state === 'suspended') audioCtx.resume(); });
+  }catch(e){ /* boosting is best-effort; plain playback keeps working */ }
+}
+
+function buildTrackEl(fileUrl, title, opts){
+  opts = opts || {};
+  const wrap = document.createElement('div');
+  wrap.className = 'track';
+  const audio = new Audio();
+  audio.preload = 'none';
+  audio.src = fileUrl;
+  if (fileUrl && fileUrl.indexOf('blob:') === 0) attachLoudnessBoost(audio);
+
+  const row = document.createElement('div'); row.className = 'track-row';
+  const playBtn = document.createElement('button'); playBtn.className = 'play-btn';
+  const iconPlay = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
+  const iconPause = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>';
+  playBtn.innerHTML = iconPlay;
+  const scrub = document.createElement('div'); scrub.className='track-scrub';
+  const fill = document.createElement('div'); fill.className='fill'; scrub.appendChild(fill);
+  const time = document.createElement('div'); time.className='track-time'; time.textContent='0:00 / 0:00';
+
+  allAudios.push(audio);
+  let playing = false;
+  playBtn.addEventListener('click', ()=>{
+    allAudios.forEach(a=>{ if(a!==audio) a.pause(); });
+    if (playing) audio.pause(); else audio.play().catch(()=>toast('无法播放音频','error'));
+  });
+  audio.addEventListener('play', ()=>{ playing=true; playBtn.innerHTML=iconPause; });
+  audio.addEventListener('pause', ()=>{ playing=false; playBtn.innerHTML=iconPlay; });
+  audio.addEventListener('ended', ()=>{ playing=false; playBtn.innerHTML=iconPlay; });
+  audio.addEventListener('timeupdate', ()=>{
+    const pct = audio.duration ? (audio.currentTime/audio.duration*100) : 0;
+    fill.style.width = pct+'%';
+    time.textContent = fmtTime(audio.currentTime)+' / '+fmtTime(audio.duration||0);
+  });
+  scrub.addEventListener('click', (e)=>{ const rect=scrub.getBoundingClientRect(); const pct=(e.clientX-rect.left)/rect.width; if (audio.duration) audio.currentTime = pct*audio.duration; });
+
+  row.appendChild(playBtn); row.appendChild(scrub); row.appendChild(time);
+  wrap.appendChild(row);
+
+  const actions = document.createElement('div'); actions.className = 'track-actions';
+  const dlBtn = document.createElement('button');
+  dlBtn.type = 'button'; dlBtn.textContent = '⬇ 下载';
+  dlBtn.addEventListener('click', ()=>{
+    if (opts.blob){ triggerDownload(opts.blob, sanitizeFilename(title)+'.'+(opts.ext||'mp3')); }
+    else { toast('音频还未缓存完成，请稍候再试','error'); }
+  });
+  actions.appendChild(dlBtn);
+  if (opts.snapshot){
+    const useBtn = document.createElement('button');
+    useBtn.type = 'button'; useBtn.textContent = '🔁 复写设置';
+    useBtn.addEventListener('click', ()=>{ reapplySnapshot(opts.snapshot); });
+    actions.appendChild(useBtn);
+  }
+  if (opts.meta){
+    const info = document.createElement('span');
+    info.style.cssText='font-family:var(--font-mono);font-size:10px;color:var(--text-faint);align-self:center;';
+    info.textContent = opts.meta;
+    actions.appendChild(info);
+  }
+  wrap.appendChild(actions);
+  return wrap;
+}
+
+/* ============================================================
+   Job queue / polling
+   ============================================================ */
+const jobs = new Map();
+let pollTimer = null;
+
+function renderQueueEmpty(){ document.getElementById('queueEmpty').style.display = jobs.size ? 'none' : 'block'; }
+
+function renderJob(job){
+  let el = document.getElementById('job-'+job.id);
+  if (!el){ el = document.createElement('div'); el.className='job'; el.id='job-'+job.id; document.getElementById('jobList').prepend(el); }
+  const statusLabel = {queued:'排队中', running:'生成中', succeeded:'已完成', failed:'失败'}[job.status] || job.status;
+  let html = '<div class="job-top"><span class="job-title">'+escapeHtml(job.title)+'</span>'+
+             '<span class="job-badge '+job.status+'">'+statusLabel+'</span></div>'+
+             '<div class="job-meta">'+job.id.slice(0,8)+' · '+new Date(job.createdAt).toLocaleTimeString()+'</div>';
+  if (job.status==='queued' || job.status==='running'){
+    html += '<div class="job-progress indeterminate"><div class="bar"></div></div>';
+  } else if (job.status==='failed'){
+    html += '<div class="job-error">'+escapeHtml(job.error||'生成失败')+'</div>';
+  }
+  el.innerHTML = html;
+
+  if (job.status==='succeeded' && job.tracks && job.tracks.length){
+    const tracksWrap = document.createElement('div'); tracksWrap.className='tracks';
+    job.tracks.forEach((t)=>{
+      const trackEl = buildTrackEl(t.playUrl, t.title, {meta:t.meta, blob:t.blob, ext:t.ext, snapshot:t.snapshot});
+      tracksWrap.appendChild(trackEl);
+    });
+    el.appendChild(tracksWrap);
+    if (job.cacheFailed){
+      const note = document.createElement('div');
+      note.className = 'cache-note';
+      note.textContent = '⚠ 无法自动缓存到本地曲库（可能是服务端未开启 CORS），播放/下载会直接访问服务器地址';
+      el.appendChild(note);
+    }
+  }
+}
+
+function startPolling(){ if (!pollTimer) pollTimer = setInterval(pollActiveJobs, 2200); }
+function stopPollingIfIdle(){
+  const active = [...jobs.values()].some(j=>j.status==='queued'||j.status==='running');
+  if (!active && pollTimer){ clearInterval(pollTimer); pollTimer=null; }
+}
+
+function extractSeedForIndex(rawSeedValue, index){
+  if (rawSeedValue===undefined || rawSeedValue===null || rawSeedValue==='') return null;
+  const str = String(rawSeedValue);
+  if (str.indexOf(',') !== -1){
+    const parts = str.split(',').map(s=>s.trim());
+    return (parts[index] !== undefined ? parts[index] : parts[0]);
+  }
+  return str;
+}
+
+/* Captures every control needed to exactly reproduce/tweak a generation later.
+   overrides lets dual-version submissions record the *actual* use_format used
+   per job, since the shared checkbox only reflects one of the two at a time. */
+function captureFormSnapshot(overrides){
+  overrides = overrides || {};
+  return {
+    mode: currentMode,
+    caption: document.getElementById('caption').value,
+    lyrics: document.getElementById('lyrics').value,
+    sampleQuery: document.getElementById('sampleQuery').value,
+    songTitle: document.getElementById('songTitle').value,
+    duration: document.getElementById('duration').value,
+    bpm: document.getElementById('bpm').value,
+    keyScale: document.getElementById('keyScale').value,
+    timeSignature: document.getElementById('timeSignature').value,
+    vocalLanguage: document.getElementById('vocalLanguage').value,
+    model: document.getElementById('modelSelect').value,
+    thinking: document.getElementById('thinking').checked,
+    useFormat: ('use_format' in overrides) ? overrides.use_format : document.getElementById('useFormat').checked,
+    audioFormat: document.getElementById('audioFormat').value,
+    batchSize: document.getElementById('batchSize').value,
+    vocalPersona: document.getElementById('vocalPersona').value,
+    inferenceSteps: document.getElementById('inferenceSteps').value,
+    guidanceScale: document.getElementById('guidanceScale').value,
+    shift: document.getElementById('shift').value,
+    inferMethod: document.getElementById('inferMethod').value,
+    cfgStart: document.getElementById('cfgStart').value,
+    cfgEnd: document.getElementById('cfgEnd').value,
+    useAdg: document.getElementById('useAdg').checked,
+    lmTemperature: document.getElementById('lmTemperature').value,
+    lmCfgScale: document.getElementById('lmCfgScale').value,
+    lmTopP: document.getElementById('lmTopP').value,
+    cotCaption: document.getElementById('cotCaption').checked,
+    cotLanguage: document.getElementById('cotLanguage').checked,
+    selectedStyles: [...selectedStyles],
+    selectedInstruments: [...selectedInstruments],
+    taskType: selectedTaskType,
+    coverStrength: document.getElementById('coverStrength').value,
+    instruction: document.getElementById('instruction').value,
+    repaintStart: document.getElementById('repaintStart').value,
+    repaintEnd: document.getElementById('repaintEnd').value,
+    remixUseCustomLyrics: document.getElementById('remixUseCustomLyrics').checked,
+    remixLyrics: document.getElementById('remixLyrics').value,
+    srcAudioFile: srcAudioFile || null,
+    refAudioFile: refAudioFile || null,
+    seed: null /* filled in per-track once the server reports the actual seed used */
+  };
+}
+
+function renderRestoredFile(holderId, file){
+  const holder = document.getElementById(holderId);
+  holder.innerHTML = '';
+  const row = document.createElement('div');
+  row.className = 'dropzone-file';
+  row.innerHTML = '<span>♪ ' + escapeHtml(file.name) + '</span>';
+  const rm = document.createElement('button');
+  rm.type = 'button'; rm.textContent = '×';
+  rm.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    if (holderId==='srcAudioFile') srcAudioFile = null; else refAudioFile = null;
+    holder.innerHTML = '';
+  });
+  row.appendChild(rm);
+  holder.appendChild(row);
+}
+
+function reapplySnapshot(snap){
+  if (!snap){ toast('这首歌没有保存设置快照（可能是这次更新之前生成的老曲目）','error'); return; }
+  document.getElementById('caption').value = snap.caption || '';
+  document.getElementById('lyrics').value = snap.lyrics || '';
+  document.getElementById('sampleQuery').value = snap.sampleQuery || '';
+  document.getElementById('songTitle').value = snap.songTitle || '';
+  document.getElementById('duration').value = snap.duration || '';
+  document.getElementById('bpm').value = snap.bpm || '';
+  document.getElementById('keyScale').value = snap.keyScale || '';
+  document.getElementById('timeSignature').value = snap.timeSignature || '';
+  document.getElementById('vocalLanguage').value = snap.vocalLanguage || '';
+  const modelSel = document.getElementById('modelSelect');
+  if ([...modelSel.options].some(o=>o.value===snap.model)) modelSel.value = snap.model || '';
+  document.getElementById('thinking').checked = !!snap.thinking;
+  document.getElementById('useFormat').checked = !!snap.useFormat;
+  document.getElementById('audioFormat').value = snap.audioFormat || 'mp3';
+  document.getElementById('batchSize').value = snap.batchSize || 1;
+  document.getElementById('vocalPersona').value = snap.vocalPersona || '';
+  document.getElementById('inferenceSteps').value = snap.inferenceSteps || 8;
+  document.getElementById('guidanceScale').value = snap.guidanceScale || 7.0;
+  document.getElementById('shift').value = snap.shift || 3.0;
+  document.getElementById('inferMethod').value = snap.inferMethod || 'ode';
+  document.getElementById('cfgStart').value = (snap.cfgStart!==undefined && snap.cfgStart!==null && snap.cfgStart!=='') ? snap.cfgStart : 0;
+  document.getElementById('cfgEnd').value = (snap.cfgEnd!==undefined && snap.cfgEnd!==null && snap.cfgEnd!=='') ? snap.cfgEnd : 1;
+  document.getElementById('useAdg').checked = !!snap.useAdg;
+  document.getElementById('lmTemperature').value = snap.lmTemperature || 0.85;
+  document.getElementById('lmCfgScale').value = snap.lmCfgScale || 2.5;
+  document.getElementById('lmTopP').value = snap.lmTopP || 0.9;
+  document.getElementById('cotCaption').checked = !!snap.cotCaption;
+  document.getElementById('cotLanguage').checked = !!snap.cotLanguage;
+
+  document.getElementById('useRandomSeed').checked = false;
+  document.getElementById('seedField').style.display = 'block';
+  document.getElementById('seed').value = (snap.seed !== null && snap.seed !== undefined) ? snap.seed : -1;
+
+  if (typeof styleSelectEl !== 'undefined' && snap.selectedStyles) styleSelectEl.selectMany(snap.selectedStyles);
+  if (typeof instrumentSelectEl !== 'undefined' && snap.selectedInstruments) instrumentSelectEl.selectMany(snap.selectedInstruments);
+
+  if (snap.mode === 'remix'){
+    document.querySelectorAll('.task-card').forEach(c=>c.classList.toggle('selected', c.dataset.task===snap.taskType));
+    selectedTaskType = snap.taskType || 'cover';
+    document.getElementById('coverStrength').value = (snap.coverStrength!==undefined && snap.coverStrength!==null && snap.coverStrength!=='') ? snap.coverStrength : 1;
+    document.getElementById('coverStrengthVal').textContent = parseFloat(document.getElementById('coverStrength').value).toFixed(2);
+    document.getElementById('instruction').value = snap.instruction || '';
+    document.getElementById('repaintStart').value = (snap.repaintStart!==undefined && snap.repaintStart!==null && snap.repaintStart!=='') ? snap.repaintStart : 0;
+    document.getElementById('repaintEnd').value = (snap.repaintEnd!==undefined && snap.repaintEnd!==null && snap.repaintEnd!=='') ? snap.repaintEnd : -1;
+    document.getElementById('repaintRange').style.display = (snap.taskType==='repaint') ? 'grid' : 'none';
+    document.getElementById('coverStrengthField').style.display = (snap.taskType==='extract') ? 'none' : 'block';
+    document.getElementById('remixUseCustomLyrics').checked = !!snap.remixUseCustomLyrics;
+    document.getElementById('remixLyricsField').style.display = snap.remixUseCustomLyrics ? 'block' : 'none';
+    document.getElementById('remixLyrics').value = snap.remixLyrics || '';
+    if (snap.srcAudioFile){ srcAudioFile = snap.srcAudioFile; renderRestoredFile('srcAudioFile', srcAudioFile); }
+    if (snap.refAudioFile){ refAudioFile = snap.refAudioFile; renderRestoredFile('refAudioFile', refAudioFile); }
+  }
+
+  const mainPageTab = document.querySelector('.page-tab[data-page="studio"], .page-tab[data-page="create"]');
+  if (mainPageTab) mainPageTab.click();
+  document.querySelector('.mode-tab[data-mode="'+(snap.mode||'write')+'"]').click();
+  toast('已恢复这首歌当时的全部设置（含种子）','success');
+}
+
+async function fetchAsBlobTrack(job, parsedItem, titleSuffix, seedForThis){
+  const remoteUrl = audioUrl(parsedItem.file);
+  const ext = (Config_lastFormat || 'mp3');
+  const lmShort = parsedItem.lm_model ? ('LM ' + String(parsedItem.lm_model).replace('acestep-5Hz-lm-','')) : '';
+  const meta = parsedItem.metas ? [parsedItem.metas.bpm && (parsedItem.metas.bpm+' BPM'), parsedItem.metas.keyscale, parsedItem.metas.duration && (Math.round(parsedItem.metas.duration)+'s'), seedForThis && ('seed '+seedForThis), lmShort].filter(Boolean).join(' · ') : [seedForThis && ('seed '+seedForThis), lmShort].filter(Boolean).join(' · ');
+  const title = job.title + (titleSuffix||'');
+  const snapshot = job.formSnapshot ? Object.assign({}, job.formSnapshot, {seed: seedForThis}) : null;
+  try{
+    const res = await fetch(remoteUrl);
+    if (!res.ok) throw new Error('HTTP '+res.status);
+    const blob = await res.blob();
+    const objUrl = URL.createObjectURL(blob);
+    addTrackToLibrary({title, blob, meta, ext, snapshot});
+    return {playUrl: objUrl, blob, ext, meta, title, snapshot};
+  }catch(e){
+    job.cacheFailed = true;
+    return {playUrl: remoteUrl, blob: null, ext, meta, title, snapshot};
+  }
+}
+
+let Config_lastFormat = 'mp3';
+
+async function pollActiveJobs(){
+  const activeIds = [...jobs.values()].filter(j=>j.status==='queued'||j.status==='running').map(j=>j.id);
+  if (!activeIds.length){ stopPollingIfIdle(); return; }
+  try{
+    const results = await queryResult(activeIds);
+    for (const r of results){
+      const job = jobs.get(r.task_id);
+      if (!job) continue;
+      if (r.status === 1){
+        job.status = 'succeeded';
+        let parsed = [];
+        try{ parsed = JSON.parse(r.result); }catch(e){ parsed = Array.isArray(r.result)?r.result:[r.result]; }
+        if (!Array.isArray(parsed)) parsed = [parsed];
+        parsed = parsed.filter(p=>p && p.file);
+        job.tracks = [];
+        for (let i=0;i<parsed.length;i++){
+          const suffix = parsed.length>1 ? (' #'+(i+1)) : '';
+          const seedForThis = extractSeedForIndex(parsed[i].seed_value, i);
+          const t = await fetchAsBlobTrack(job, parsed[i], suffix, seedForThis);
+          job.tracks.push(t);
+        }
+        toast('《'+job.title+'》生成完成 🎵','success');
+        renderJob(job);
+      } else if (r.status === 2){
+        job.status = 'failed';
+        job.error = r.error || '生成失败';
+        toast('生成失败: '+job.error, 'error');
+        renderJob(job);
+      } else {
+        job.status = 'running';
+        renderJob(job);
+      }
+    }
+  }catch(e){ /* transient network error, ignore */ }
+  stopPollingIfIdle();
+}
+
+/* ============================================================
+   Generate
+   ============================================================ */
+const generateBtn = document.getElementById('generateBtn');
+const genEq = document.getElementById('genEq');
+
+async function submitOneJob(payload, files, titleSuffix, formSnapshot){
+  const manualTitle = strOrEmpty('songTitle');
+  const title = (manualTitle || craftTitle()) + (titleSuffix||'');
+  Config_lastFormat = payload.audio_format || 'mp3';
+  const data = await releaseTask(payload, files);
+  const job = { id: data.task_id, title, status:'queued', createdAt: Date.now(), tracks: [], formSnapshot: formSnapshot||null };
+  jobs.set(job.id, job);
+  renderQueueEmpty();
+  renderJob(job);
+  return data;
+}
+
+generateBtn.addEventListener('click', async ()=>{
+  if (!connected){ toast('请先在设置中连接到 ACE-Step 服务','error'); openSettingsModal(); return; }
+
+  generateBtn.disabled = true;
+  genEq.classList.add('live');
+  try{
+    if (currentMode !== 'remix' && dualVersionEl.checked){
+      const strict = buildPayload({use_format:false});
+      const polished = buildPayload({use_format:true});
+      const d1 = await submitOneJob(strict.payload, strict.files, '（严格版）', captureFormSnapshot({use_format:false}));
+      const d2 = await submitOneJob(polished.payload, polished.files, '（润色版）', captureFormSnapshot({use_format:true}));
+      startPolling();
+      toast('已提交两个版本的生成任务','success');
+    } else {
+      const built = buildPayload();
+      const data = await submitOneJob(built.payload, built.files, '', captureFormSnapshot());
+      startPolling();
+      toast('任务已提交，队列位置 '+(nz(data.queue_position, '—')),'success');
+    }
+  }catch(e){
+    toast('提交失败: '+e.message, 'error');
+  }finally{
+    generateBtn.disabled = false;
+    genEq.classList.remove('live');
+  }
+});
+
+document.getElementById('clearFinished').addEventListener('click', ()=>{
+  [...jobs.entries()].forEach(([id,j])=>{
+    if (j.status==='succeeded' || j.status==='failed'){
+      jobs.delete(id);
+      const el = document.getElementById('job-'+id);
+      if (el) el.remove();
+    }
+  });
+  renderQueueEmpty();
+});
+
+/* ============================================================
+   Settings modal
+   ============================================================ */
+function openSettingsModal(){
+  document.getElementById('apiBase').value = Config.apiBase;
+  document.getElementById('apiKey').value = Config.apiKey;
+  document.getElementById('libraryCap').value = Config.libraryCap;
+  document.getElementById('lmModelSelect').value = Config.lmModel;
+  document.getElementById('loudBoostToggle').checked = Config.loudBoost;
+  document.getElementById('settingsModal').classList.add('open');
+}
+function closeSettingsModal(){ document.getElementById('settingsModal').classList.remove('open'); }
+document.getElementById('openSettings').addEventListener('click', openSettingsModal);
+document.getElementById('closeSettings').addEventListener('click', closeSettingsModal);
+document.getElementById('settingsModal').addEventListener('click', (e)=>{ if(e.target.id==='settingsModal') closeSettingsModal(); });
+
+document.getElementById('testConnection').addEventListener('click', async ()=>{
+  const base = document.getElementById('apiBase').value.trim().replace(/\/+$/,'');
+  const key = document.getElementById('apiKey').value.trim();
+  const prevBase = Config.apiBase, prevKey = Config.apiKey;
+  Config.apiBase = base; Config.apiKey = key;
+  try{ await pingHealth(); toast('连接成功 ✓','success'); }
+  catch(e){ Config.apiBase = prevBase; Config.apiKey = prevKey; toast('连接失败: '+e.message, 'error'); }
+});
+
+document.getElementById('saveSettings').addEventListener('click', ()=>{
+  Config.apiBase = document.getElementById('apiBase').value.trim().replace(/\/+$/,'');
+  Config.apiKey = document.getElementById('apiKey').value.trim();
+  Config.libraryCap = Math.max(5, parseInt(document.getElementById('libraryCap').value,10) || 50);
+  Config.lmModel = document.getElementById('lmModelSelect').value;
+  Config.loudBoost = document.getElementById('loudBoostToggle').checked;
+  saveConfig();
+  closeSettingsModal();
+  refreshStatus();
+});
+
+/* ============================================================
+   Init
+   ============================================================ */
+refreshStatus();
+updateLibraryBadge();
+if (!localStorage.getItem('acestep.apiBase')){ openSettingsModal(); }
+
+})();
+</script></body>
+</html>

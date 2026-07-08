@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- simple music note in the brand green -->
+    <path
+        android:fillColor="#1ED760"
+        android:pathData="M67,28 L67,62.5 C65.2,61.6 63.2,61 61,61 C54.4,61 49,65.9 49,72 C49,78.1 54.4,83 61,83 C67.6,83 73,78.1 73,72 L73,40 L82,42.5 L82,34.5 Z" />
+</vector>
