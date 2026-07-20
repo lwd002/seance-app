@@ -563,7 +563,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
             <div class="field" id="seedField" style="display:none;"><label class="field-label">种子</label><input type="number" id="seed" value="-1" class="mono-input"></div>
 
             <div class="subgroup-title">扩散参数</div>
-            <p class="help-text" style="margin:0 0 12px;">注意：turbo 蒸馏模型（当前服务器上仅有的两个模型）会<b>忽略</b> Guidance Scale / CFG 区间 / ADG，这些仅对 base / sft 模型生效。</p>
+            <p class="help-text" id="stepsHint" style="margin:0 0 12px;">注意：turbo 蒸馏模型固定 <b>8 步</b>，且会忽略 Guidance Scale / CFG 区间 / ADG；sft / base 模型需要 <b>50 步</b>，步数不足会直接生成噪音。切换模型时步数会自动调整。</p>
             <div class="field-row cols-2 mono-input">
               <div class="field"><label class="field-label">Guidance Scale</label><input type="number" id="guidanceScale" value="7.0" step="0.1"></div>
               <div class="field"><label class="field-label">Shift</label><input type="number" id="shift" value="3.0" step="0.1" min="1" max="5"></div>
@@ -781,6 +781,35 @@ function natDownload(url){
     const id = 'd' + (++__nat.seq);
     __nat.pending[id] = {resolve: resolve, reject: reject};
     window.AndroidBridge.downloadToCache(id, url);
+  });
+}
+/* Fallback path: stream a cached file's bytes over the bridge as base64 chunks
+   and reassemble the Blob here. Used when the asset loader can't serve the
+   virtual URL — slower and more memory-hungry, but has no moving parts. */
+const __chunks = {};
+window.__nativeChunk = function(id, b64){
+  (__chunks[id] = __chunks[id] || []).push(b64);
+};
+window.__nativeChunkDone = function(id, ok, msg){
+  const p = __nat.pending[id]; if (!p) return; delete __nat.pending[id];
+  const parts = __chunks[id] || []; delete __chunks[id];
+  if (!ok){ p.reject(new Error(msg || '读取缓存文件失败')); return; }
+  try{
+    const bufs = [];
+    for (let k=0;k<parts.length;k++){
+      const bin = atob(parts[k]);
+      const u8 = new Uint8Array(bin.length);
+      for (let i=0;i<bin.length;i++) u8[i] = bin.charCodeAt(i);
+      bufs.push(u8);
+    }
+    p.resolve(new Blob(bufs));
+  }catch(e){ p.reject(e); }
+};
+function natStreamBlob(fileName){
+  return new Promise(function(resolve, reject){
+    const id = 's' + (++__nat.seq);
+    __nat.pending[id] = {resolve: resolve, reject: reject};
+    window.AndroidBridge.streamCachedFile(id, fileName);
   });
 }
 function b64FromBuffer(buf){
@@ -1079,6 +1108,18 @@ bindLyricHints('remixLyrics','remixLyricsHint');
 
 document.getElementById('vocalPersona').addEventListener('change', function(){
   document.getElementById('personaHint').style.display = /duet|choir/.test(this.value) ? 'block' : 'none';
+});
+
+/* Turbo checkpoints are 8-step distilled; sft/base need the full ~50-step
+   schedule. Running sft at 8 steps stops the denoise a sixth of the way in and
+   outputs pure noise — so the step count follows the model automatically. */
+function stepsForModel(name){ return /turbo/i.test(name || 'turbo') ? 8 : 50; }
+document.getElementById('modelSelect').addEventListener('change', function(){
+  const el = document.getElementById('inferenceSteps');
+  const want = stepsForModel(this.value);
+  if (Number(el.value) === want) return;
+  el.value = want;
+  toast('已切换到' + (want === 8 ? ' turbo 类模型，推理步数自动设为 8' : ' sft/base 类模型，推理步数自动设为 50（步数不足会生成噪音）'), 'success');
 });
 
 /* Instruments get silently dropped when the LM rewrites the caption (use_cot_caption).
@@ -1755,7 +1796,7 @@ function renderJob(job){
     if (job.cacheFailed){
       const note = document.createElement('div');
       note.className = 'cache-note';
-      note.textContent = '⚠ 无法自动缓存到本地曲库（可能是服务端未开启 CORS），播放/下载会直接访问服务器地址';
+      note.textContent = '⚠ 无法缓存到本地曲库' + (job.cacheError ? ('：' + job.cacheError) : '（可能是服务端未开启 CORS）') + '，播放/下载会直接访问服务器地址';
       el.appendChild(note);
     }
   }
@@ -1912,15 +1953,30 @@ async function fetchAsBlobTrack(job, parsedItem, titleSuffix, seedForThis){
   const title = job.title + (titleSuffix||'');
   const snapshot = job.formSnapshot ? Object.assign({}, job.formSnapshot, {seed: seedForThis}) : null;
   try{
-    const src = NATIVE ? await natDownload(remoteUrl) : remoteUrl;
-    const res = await fetch(src);
-    if (!res.ok) throw new Error('HTTP '+res.status);
-    const blob = await res.blob();
+    let blob;
+    if (NATIVE){
+      /* native downloads the file, then the page reads it back: first try the
+         same-origin virtual URL (cheap), and if the asset loader can't serve it
+         fall back to streaming the bytes over the bridge in chunks */
+      const virt = await natDownload(remoteUrl);
+      try{
+        const res = await fetch(virt);
+        if (!res.ok) throw new Error('HTTP '+res.status);
+        blob = await res.blob();
+      }catch(inner){
+        blob = await natStreamBlob(virt.split('/').pop());
+      }
+    } else {
+      const res = await fetch(remoteUrl);
+      if (!res.ok) throw new Error('HTTP '+res.status);
+      blob = await res.blob();
+    }
     const objUrl = URL.createObjectURL(blob);
     addTrackToLibrary({title, blob, meta, ext, snapshot});
     return {playUrl: objUrl, blob, ext, meta, title, snapshot};
   }catch(e){
     job.cacheFailed = true;
+    job.cacheError = e && e.message ? e.message : String(e);
     return {playUrl: remoteUrl, blob: null, ext, meta, title, snapshot};
   }
 }

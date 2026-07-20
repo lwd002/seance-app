@@ -22,6 +22,7 @@ import androidx.webkit.WebViewAssetLoader;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -171,9 +172,8 @@ public class MainActivity extends Activity {
                         String b64 = Base64.encodeToString(resp, Base64.NO_WRAP);
                         callJs("window.__nativeHttpDone('" + id + "'," + status + ",'" + b64 + "')");
                     } catch (Exception e) {
-                        String msg = String.valueOf(e.getMessage()).replace("\\", "").replace("'", "");
                         callJs("window.__nativeHttpDone('" + id + "',0,'')");
-                        toastOnUi("请求失败: " + msg);
+                        toastOnUi("请求失败: " + safeMsg(e));
                     }
                 }
             });
@@ -212,8 +212,38 @@ public class MainActivity extends Activity {
                         String virtualUrl = "https://appassets.androidplatform.net/audio/" + out.getName();
                         callJs("window.__nativeDlDone('" + id + "',true,'" + virtualUrl + "')");
                     } catch (Exception e) {
-                        String msg = String.valueOf(e.getMessage()).replace("\\", "").replace("'", "");
-                        callJs("window.__nativeDlDone('" + id + "',false,'" + msg + "')");
+                        callJs("window.__nativeDlDone('" + id + "',false,'" + safeMsg(e) + "')");
+                    }
+                }
+            });
+        }
+
+        /**
+         * Fallback for when the page can't read a cached file through the asset
+         * loader's virtual URL: push the bytes over the bridge as base64 chunks.
+         */
+        @JavascriptInterface
+        public void streamCachedFile(final String id, final String name) {
+            pool.execute(new Runnable() {
+                @Override
+                public void run() {
+                    FileInputStream fis = null;
+                    try {
+                        File f = new File(audioCacheDir, new File(name).getName());
+                        if (!f.exists()) throw new Exception("缓存文件不存在: " + f.getName());
+                        fis = new FileInputStream(f);
+                        byte[] buf = new byte[262144];
+                        int n;
+                        while ((n = fis.read(buf)) > 0) {
+                            String b64 = Base64.encodeToString(buf, 0, n, Base64.NO_WRAP);
+                            callJs("window.__nativeChunk('" + id + "','" + b64 + "')");
+                        }
+                        fis.close();
+                        fis = null;
+                        callJs("window.__nativeChunkDone('" + id + "',true,'')");
+                    } catch (Exception e) {
+                        if (fis != null) try { fis.close(); } catch (Exception ignored) {}
+                        callJs("window.__nativeChunkDone('" + id + "',false,'" + safeMsg(e) + "')");
                     }
                 }
             });
@@ -237,6 +267,12 @@ public class MainActivity extends Activity {
                 toastOnUi("保存失败: " + e.getMessage());
             }
         }
+    }
+
+    /** Messages are interpolated into a JS single-quoted string literal. */
+    private static String safeMsg(Exception e) {
+        String m = String.valueOf(e.getMessage());
+        return m.replace("\\", "").replace("'", "").replace("\r", " ").replace("\n", " ");
     }
 
     private static byte[] readAll(InputStream in) throws Exception {
