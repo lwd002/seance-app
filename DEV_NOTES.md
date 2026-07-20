@@ -51,6 +51,15 @@ FormData（翻唱模式上传音频）的序列化技巧：`new Response(formDat
 
 生成的歌可能几 MB 到几十 MB（WAV），用 evaluateJavascript 传 base64 会爆。方案：JS 调 `AndroidBridge.downloadToCache(id, url)` → Java 下载到 `filesDir/audio/<uuid>.<ext>` → 回调返回虚拟地址 `https://appassets.androidplatform.net/audio/<file>`（AssetLoader 加了第二个 PathHandler：`InternalStoragePathHandler` 指向该目录）→ JS 对这个**同源**地址正常 fetch 出 blob，后续播放/入库逻辑不变。缓存目录每次启动清空（页面自己在 IndexedDB 里有持久副本）。
 
+### 3.3.1 缓存读取失败的兜底（v1.3）
+
+实测中出现过：native 下载成功，但页面 `fetch` 那个虚拟地址失败 → 曲库缓存不了 → 下载按钮报"音频还未缓存完成"，同时弹出误导性的 CORS 提示。原因没有完全定位（asset loader 在某些机型/WebView 版本上服务内部存储文件不稳定），所以改成**双通道**：
+
+1. 主通道：`fetch('https://appassets.androidplatform.net/audio/<file>')`（快，不占内存）
+2. 兜底：主通道抛异常时自动调 `AndroidBridge.streamCachedFile(id, fileName)`，Java 按 256KB 分块 base64 推给 `window.__nativeChunk(id, b64)`，结束时 `__nativeChunkDone(id, ok, msg)`，JS 侧拼成 Blob。慢一些、占内存，但没有任何中间层。
+
+同时 `fetchAsBlobTrack` 的 catch 现在把真实 `e.message` 存进 `job.cacheError` 并显示在卡片提示里——**不要再改回笼统的 CORS 文案**，那次排查就是被这句误导多花了时间。
+
 ### 3.4 文件上传选择器（v1.2 的教训）
 
 `<input type="file">` 在 WebView 里默认是**死的**（点了没反应）——必须实现 `WebChromeClient.onShowFileChooser` → `startActivityForResult(params.createIntent())` → `onActivityResult` 里 `parseResult` 回传。v1.1 漏了这个，翻唱页两个上传框点不动。
@@ -72,6 +81,7 @@ WebView 里 blob 的 `<a download>` 也是死的。网页的 `triggerDownload()`
 | 1.0 | 首版壳（fetch 直连）——❌ 被 WebView 私网拦截，红点 |
 | 1.1 | API/音频全部原生化（3.2/3.3） |
 | 1.2 | 修上传框（3.4 onShowFileChooser） |
+| 1.3 | 音频缓存加分块兜底（3.3）+ 真实错误上报；网页侧模型/步数自动匹配 |
 
 ## 5. 日常操作
 
